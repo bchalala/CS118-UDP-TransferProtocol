@@ -18,10 +18,18 @@ int main(int argc, char* argv[]) {
 
 	int clientsocket; //Socket descriptor
     int portno, n;
+    socklen_t len;
     struct sockaddr_in serv_addr;
     struct hostent *server; //contains tons of information, including the server's IP address
+    char buffer[256];
 
-    portno = argv[2];
+
+	if (argc < 3) {
+		 fprintf(stderr,"ERROR, no host or port provided\n");
+		 exit(1);
+	}
+
+    portno = 5018; //argv[2]
 
 	int windowSize;
 	int numPackets;
@@ -34,24 +42,34 @@ int main(int argc, char* argv[]) {
 		error("ERROR opening client socket");
 
 
- 	bzero((char*)&serveraddr, sizeof(serveraddr));
- 	serveraddr.sin_family = AF_INET;
- 	serveraddr.sin_port = htons(portno);
+ 	bzero((char*) &serv_addr, sizeof(serv_addr));
+ 	serv_addr.sin_family = AF_INET;
+ 	serv_addr.sin_port = htons(portno);
 
- 	server = gethostbyname(argv[1]);
- 	if (server = NULL) {
+ 	server = gethostbyname("127.0.0.1"); // argv[1]
+ 	if (server == NULL) {
  		error("ERROR getting host");
  	}
 
-	bcopy((char*) server->h_addr, (char*) &serveraddr.sin_addr.s_addr, server->h_length); 	
+	bcopy((char*) server->h_addr, (char*) &serv_addr.sin_addr.s_addr, server->h_length); 	
 	
-	printf("Sending request to the client");
+	printf("Sending request to the sender\n\n");
 
 	// int sendto(int sockfd, const void *msg, int len, unsigned int flags, const struct sockaddr *to, socklen_t tolen);
-	//int recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct sockaddr *from, int *fromlen); 
+	// int recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct sockaddr *from, int *fromlen); 
 
 	char* connMsg = "Let's establish a connection";
-	sendto(clientsocket, "Let's establish a connection", sizeof("msg"), 0, (sockaddr*)&serv_addr, sizeof(serv_addr));
+	sendto(clientsocket, connMsg, strlen(connMsg) * sizeof(char), 
+					0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 
+	printf("Waiting for sender response\n\n");
+	recvfrom(clientsocket, buffer, sizeof(buffer), 
+					0,(struct sockaddr*) &serv_addr, &len);
+
+	printf("Sender Responded: %s", buffer);
+
+	close(clientsocket);
 
 }
+
+
