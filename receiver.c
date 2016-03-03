@@ -24,12 +24,20 @@ int main(int argc, char* argv[]) {
     char buffer[256];
 
 
+    // pre-PLPC testing - too lazy to write all the parameters for testing
 	if (argc < 3) {
 		 fprintf(stderr,"ERROR, no host or port provided\n");
 		 exit(1);
 	}
 
-    portno = 5018; //argv[2]
+	/* 
+	if (argc < 6) {
+		fprintf(stderr, "USAGE: receiver <sender hostname> <sender portnumber> <filename> <PL> <PC>");
+		exit(1);
+	}
+	*/
+
+    portno = atoi(argv[2]);
 
 	int windowSize;
 	int numPackets;
@@ -37,7 +45,7 @@ int main(int argc, char* argv[]) {
 
 	int numPacketsReceived = 0;
 
-	clientsocket = socket(AF_INET,SOCK_DGRAM,0);
+	clientsocket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (clientsocket < 0)
 		error("ERROR opening client socket");
 
@@ -46,7 +54,7 @@ int main(int argc, char* argv[]) {
  	serv_addr.sin_family = AF_INET;
  	serv_addr.sin_port = htons(portno);
 
- 	server = gethostbyname("127.0.0.1"); // argv[1]
+ 	server = gethostbyname(argv[1]);
  	if (server == NULL) {
  		error("ERROR getting host");
  	}
@@ -66,7 +74,19 @@ int main(int argc, char* argv[]) {
 	recvfrom(clientsocket, buffer, sizeof(buffer), 
 					0,(struct sockaddr*) &serv_addr, &len);
 
-	printf("Sender Responded: %s", buffer);
+	printf("Sender Responded: %s\n", buffer);
+	bzero((char*) buffer, sizeof(char) * 256);
+
+	char* filename = argv[3];
+	sendto(clientsocket, filename, strlen(filename) * sizeof(char), 
+					0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));	
+	printf("Requesting the file: %s\n", filename);
+
+	recvfrom(clientsocket, buffer, sizeof(buffer), 
+					0,(struct sockaddr*) &serv_addr, &len);
+	printf("Is the file coming?: %s\n", buffer);
+	bzero((char*) buffer, sizeof(char) * 256);
+
 
 	close(clientsocket);
 

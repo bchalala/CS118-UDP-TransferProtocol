@@ -6,6 +6,8 @@
 #define WE_SENT 2
 #define WE_ACK  3
 
+#define MAX_WE_SIZE 1024
+
 typedef struct {
     window_element* next;
     byte* buffer;
