@@ -9,7 +9,19 @@
 
 #include <sys/stat.h> // for file stat
 //#include "sll.h"
-#define MAX_WE_SIZE 1024
+#define PACKET_SIZE 1024
+#define PACKET_CONTENT_SIZE (PACKET_SIZE - 2 * sizeof(long) - 1);
+// -1 for \0 at the end
+
+
+typedef struct _packet {
+
+	unsigned long total_size;
+	unsigned long seq_num;
+	char buffer[PACKET_CONTENT_SIZE + 1];
+	// +1 for \0 at the end
+} packet;
+
 
 //  USAGE: sender < portnumber > CWnd PL PC
 
@@ -25,7 +37,7 @@ int main(int argc, char *argv[])
 	socklen_t clilen;
 	struct sockaddr_in serv_addr, cli_addr;
 
-	char buffer[MAX_WE_SIZE];
+	char buffer[PACKET_SIZE];
 
 	if (argc < 2) {
 		 fprintf(stderr,"ERROR, no port provided\n");
@@ -61,64 +73,86 @@ int main(int argc, char *argv[])
 
  	// wait for connection
  	printf("Waiting for receiver\n\n");
- 	recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen);
- 	// if we get here, receiver talked to us
- 	printf("Receiver Said: %s\n\n", buffer);
- 	bzero((char*) buffer, sizeof(char) * 256);
 
- 	char* heyMsg = "What's up receiver, I'm here\n";
- 	sendto(sockfd, heyMsg, strlen(heyMsg) * sizeof(char), 
- 			0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+ 	while (1) {
+ 		// once we receive file request from receiver, we go in. Otherwise, loop to keep listening
+	 	if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 
- 	recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen);
- 	printf("Receiver wants the file: %s\n\n", buffer);
+		 	int namelen = strlen(buffer);
+		 	char filename[namelen + 1];
+		 	filename[namelen] = '\0';
+		 	strncpy(filename, &buffer, namelen);
 
- 	int namelen = strlen(buffer);
- 	char filename[namelen + 1];
- 	filename[namelen] = '\0';
- 	strncpy(filename, &buffer, namelen);
+		 	bzero((char*) buffer, sizeof(char) * PACKET_SIZE);
 
- 	bzero((char*) buffer, sizeof(char) * 256);
+		 	printf("Receiver wants the file: %s\n\n", filename);
 
- 	heyMsg = "File is on its way\n";
- 	sendto(sockfd, heyMsg, strlen(heyMsg) * sizeof(char), 
- 		0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+		 	/*
+
+				Breaking down file down to packets
+
+		 	*/
+
+			/*	GETTING FILE CONTENT */
+			FILE* f =  fopen(filename, "r");
+			if (f == NULL) {
+				error("ERROR opening requested file");
+			}
+
+			// number of bytes in the file
+			struct stat st;
+			stat(filename, &st);
+			int fileBytes = st.st_size;
+
+			char* fileContent = (char*) calloc(fileBytes, sizeof(char));
+			if (fileContent == NULL) {
+				error("ERROR allocating space for file");
+			}
+
+			fread(fileContent, sizeof(char), fileBytes, f);
+			fclose(f);
+
+			/* 	BREAK DOWN FILE */
+
+			int num_packets = fileBytes / PACKET_CONTENT_SIZE;
+			int remainderBytes = fileBytes % packet_size;
+			if (remainderBytes)
+				num_packets++;
+
+			printf("Number of packets for the file %s is: %i\n", filename, num_packets);
+
+			/*
+
+				PACKET ARRAY CONSTRUCTION
+
+			*/
+			packet file_packets[num_packets];
+
+			int i;
+			for (i = 0; i < num_packets; i++) {
+				if ((i != num_packets) - 1 && remainderBytes) { 
+				// the last packet with remainder bytes doesn't take full space
+					strncpy(file_packets[i].buffer, fileContent + i * PACKET_CONTENT_SIZE, remainderBytes);
+					file_packets[i].buffer[remainderBytes] = 0;
+				}
+				else { // normal cases
+					strncpy(file_packets[i].buffer, fileContent + i * PACKET_CONTENT_SIZE, PACKET_CONTENT_SIZE);
+					file_packets[i].buffer[PACKET_CONTENT_SIZE]	= 0;
+				}
+
+				file_packets[i].total_size = fileBytes;
+				file_packets[i].seq_num = i; 
+				// TODO: how should seq_num be numbered - packet number?
+			}
+
+			printf("Created array of packets with %i packets\n", num_packets);
 
 
- 	/*
-	
-		Breaking down file down to packets
-	
- 	*/
 
-	/*	GETTING FILE CONTENT */
-	FILE* f =  fopen(filename, "r");
-	if (f == NULL) {
-		error("ERROR opening requested file");
+
+		}
+
 	}
-
-	// number of bytes in the file
-	struct stat st;
-	stat(filename, &st);
-	int fileBytes = st.st_size;
-
-	char* fileContent = (char*) calloc(fileBytes, sizeof(char));
-	if (fileContent == NULL) {
-		error("ERROR allocating space for file");
-	}
-
-	fread(fileContent, sizeof(char), fileBytes, f);
-	fclose(f);
-
-	/* 	BREAK DOWN FILE */
-
-	int packet_size; // TODO - 1024 - size of other components in window element?
-	int num_packets = fileBytes / packet_size;
-	int remainderBytes = fileBytes % packet_size;
-	if (remainderBytes)
-		num_packets++;
-
-	// TODO: figure out how we want to structure packets
 
 
 

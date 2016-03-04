@@ -66,26 +66,19 @@ int main(int argc, char* argv[]) {
 	// int sendto(int sockfd, const void *msg, int len, unsigned int flags, const struct sockaddr *to, socklen_t tolen);
 	// int recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct sockaddr *from, int *fromlen); 
 
-	char* connMsg = "Let's establish a connection";
-	sendto(clientsocket, connMsg, strlen(connMsg) * sizeof(char), 
+	char* filename = argv[3];
+	printf("Requesting the file: %s\n", filename);
+	sendto(clientsocket, filename, strlen(filename) * sizeof(char), 
 					0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 
-	printf("Waiting for sender response\n\n");
-	recvfrom(clientsocket, buffer, sizeof(buffer), 
-					0,(struct sockaddr*) &serv_addr, &len);
+	while (1) {
+		if (recvfrom(clientsocket, buffer, sizeof(buffer), 0,(struct sockaddr*) &serv_addr, &len) != -1) {
 
-	printf("Sender Responded: %s\n", buffer);
-	bzero((char*) buffer, sizeof(char) * 256);
+			// packets ...
 
-	char* filename = argv[3];
-	sendto(clientsocket, filename, strlen(filename) * sizeof(char), 
-					0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));	
-	printf("Requesting the file: %s\n", filename);
+		}
 
-	recvfrom(clientsocket, buffer, sizeof(buffer), 
-					0,(struct sockaddr*) &serv_addr, &len);
-	printf("Is the file coming?: %s\n", buffer);
-	bzero((char*) buffer, sizeof(char) * 256);
+	}
 
 
 	close(clientsocket);
