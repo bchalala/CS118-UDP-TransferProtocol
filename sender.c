@@ -10,14 +10,14 @@
 #include <sys/stat.h> // for file stat
 //#include "sll.h"
 #define PACKET_SIZE 1024
-#define PACKET_CONTENT_SIZE (PACKET_SIZE - 2 * sizeof(long) - 1);
+#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1);
 // -1 for \0 at the end
 
 
 typedef struct _packet {
 
 	unsigned long total_size;
-	unsigned long seq_num;
+	unsigned int seq_num;
 	char buffer[PACKET_CONTENT_SIZE + 1];
 	// +1 for \0 at the end
 } packet;
@@ -64,8 +64,7 @@ int main(int argc, char *argv[])
 	serv_addr.sin_port=htons(portno);
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-	if (bind(sockfd, (struct sockaddr *) &serv_addr,
-	    sizeof(serv_addr)) < 0) 
+	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
 	    error("ERROR on binding");
 
 	bzero((char*) &cli_addr, sizeof(cli_addr));
@@ -130,14 +129,15 @@ int main(int argc, char *argv[])
 
 			int i;
 			for (i = 0; i < num_packets; i++) {
+
 				if ((i != num_packets) - 1 && remainderBytes) { 
 				// the last packet with remainder bytes doesn't take full space
 					strncpy(file_packets[i].buffer, fileContent + i * PACKET_CONTENT_SIZE, remainderBytes);
-					file_packets[i].buffer[remainderBytes] = 0;
+					file_packets[i].buffer[remainderBytes] = '\0';
 				}
 				else { // normal cases
 					strncpy(file_packets[i].buffer, fileContent + i * PACKET_CONTENT_SIZE, PACKET_CONTENT_SIZE);
-					file_packets[i].buffer[PACKET_CONTENT_SIZE]	= 0;
+					file_packets[i].buffer[PACKET_CONTENT_SIZE]	= '\0';
 				}
 
 				file_packets[i].total_size = fileBytes;
@@ -148,6 +148,93 @@ int main(int argc, char *argv[])
 			printf("Created array of packets with %i packets\n", num_packets);
 
 
+			/*
+		
+				START SENDING PACKETS
+
+			*/
+
+			unsigned int window_size = 5; // or atoi(argv[2])
+			unsigned int curr_window_elem = 0;
+
+			//int latest_ACK_received = -1;
+			int latest_packet = -1;
+			int latest_ACKd_packet = -1;
+
+			time_t timeout;
+
+
+			// keep sending and receiving ACK until we get ACK for last packet
+			while (latest_ACKd_packet != num_packets - 1) {
+
+				/*
+					Send packets within the window size					
+				*/
+				for (i = curr_window_elem; i < curr_window_elem + window_size && i != num_packets; i++) {
+					printf("Latest Packet Sent: %i\n Current Window Element: %i\n", latest_packet, i);
+
+					if (i > latest_ACKd_packet) {
+
+						sendto(sockfd, (char *) (file_packets + i), sizeof(char) * PACKET_SIZE, 
+							0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+						printf("Just sent packet %i out of %i\n", i, num_packets));
+
+						latest_packet = i;
+
+						// TODO: set timer
+
+					}
+
+				}
+
+
+				int last_window_packet = -1;
+				if (curr_window_elem + window_size > num_packets)
+					last_window_packet = num_packets-1;
+				else
+					last_window_packet = window_size + curr_window_elem - 1;	
+
+
+				/*
+					Loop to receive ACKs within the window
+				*/
+				while (1) {
+
+					// TODO: break out if timeout'd
+
+					// Again, loop to listen for ACK msg
+					if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
+
+						if (buffer == NULL) {
+							error("ERROR Nothing in ACK msg buffer");
+						}
+
+						// TODO: handle packet corruption & loss
+
+						packet* ACK_msg = (packet *) buffer;
+
+						int latest_ACK_received = ACK_msg->seq_num;
+
+						if (latest_ACK_received > file_packets[curr_window_elem].seq_num) {
+							latest_ACKd_packet = latest_ACK_received;
+
+							// update curr_window_elem
+							
+
+
+
+
+						}
+
+
+
+
+					}
+
+				} // End of ACK while loop
+
+
+			} // End of packet sending while loop
 
 
 		}

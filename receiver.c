@@ -6,6 +6,19 @@
 #include <stdlib.h>
 #include <strings.h>
 
+#define PACKET_SIZE 1024
+#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1);
+// -1 for \0 at the end
+
+
+typedef struct _packet {
+
+	unsigned long total_size;
+	unsigned int seq_num;
+	char buffer[PACKET_CONTENT_SIZE + 1];
+	// +1 for \0 at the end
+} packet;
+
 void error(char *msg)
 {
     perror(msg);
@@ -39,12 +52,6 @@ int main(int argc, char* argv[]) {
 
     portno = atoi(argv[2]);
 
-	int windowSize;
-	int numPackets;
-	int fileSize;
-
-	int numPacketsReceived = 0;
-
 	clientsocket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (clientsocket < 0)
 		error("ERROR opening client socket");
@@ -71,18 +78,105 @@ int main(int argc, char* argv[]) {
 	sendto(clientsocket, filename, strlen(filename) * sizeof(char), 
 					0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 
+
+	// variables to keep track of packet information
+	packet* file_packets = NULL;
+	unsigned int next_packet = 0;
+	unsigned long file_size;
+	unsigned int received_packets = 0;
+	unsigned int total_num_packets;
+
+
 	while (1) {
+		// keep looping to receive file packets
 		if (recvfrom(clientsocket, buffer, sizeof(buffer), 0,(struct sockaddr*) &serv_addr, &len) != -1) {
 
-			// packets ...
+			packet* content_packet = (packet *) buffer;
+			if (content_packet == NULL) {
+				error("File Packet #%i was NULL\n", next_packet);
+			}
+
+			if (file_packets == NULL) {
+				// very first packet
+				file_size = content_packet->total_size;
+
+				total_num_packets = (file_size / PACKET_CONTENT_SIZE);
+
+				file_packets =  (packet *) calloc(total_num_packets, sizeof(packet));
+
+				if (file_packets == NULL) {
+					error("ERROR allocating for receiving file packets");
+				}
+			}
+
+			packet ACK_packet;
+
+			// TODO: handle packet corruption or loss
+
+			if (content_packet->seq_num == next_packet) {
+				// received the packet we supposed to be getting
+
+				printf("Got packet number %i, next packet should be %i", next_packet, ++next_packet);
+
+				file_packets[received_packets] = *content_packet;
+				received_packets++;
+
+				ACK_packet.seq_num = next_packet - 1;
+			}
+			else {
+				// got a different packet than expected
+				printf("Should get packet %i, but got %i\n", next_packet, content_packet->seq_num);
+
+				ACK_packet.seq_num = content_packet->seq_num;
+			}	
+
+			/*
+				Received file packet, so send an ACK correspondingly
+			*/
+
+			ACK_packet.total_size = file_size;
+
+			sendto(clientsocket, (char *) ACK_packet, PACKET_SIZE, 
+				0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+			if (next_packet > total_num_packets) {
+				break;
+			}
+
 
 		}
 
+	} // End of receiving file packets while loop
+
+	printf("Done receiving file packets and sending ACKs back\n");
+
+
+
+	/*
+		Write the received packets into file
+	*/
+	char fileContent[total_size + 1];
+
+	int i;
+	for (i = 0; i < total_num_packets; i++) {
+		strcat(fileContent, file_packets[i].buffer);
 	}
+
+	fileContent[total_size] = '\0';
+
+	FILE* f = fopen("receiveTest.txt", "wb");
+	if (f == NULL) {
+		error("ERROR with opening file");
+	}
+
+	fwrite(fileContent, sizeof(char), total_size, f);
+
+	fclose(f);
 
 
 	close(clientsocket);
 
+	return 0;
 }
 
 
