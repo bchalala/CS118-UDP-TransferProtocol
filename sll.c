@@ -1,7 +1,7 @@
-/* Implements ssl.h header. For server side of UDP FTP 
+/* Implements sll.h header. For server side of UDP FTP 
  * Brett Chalabian and Jason Woo */
 
-#include "ssl.h"
+#include "sll.h"
 #include <stdio.h>
 
 window* generateWindow(int window_size) {
