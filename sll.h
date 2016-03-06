@@ -6,6 +6,8 @@
 #define WE_SENT 2
 #define WE_ACK  3
 
+/* Linked List implementation for the Transfer Protocol Window. */
+
 typedef struct {
     window_element* next;
     byte* buffer;
@@ -37,5 +39,9 @@ bool addWindowElement(window* w, byte* buf, int sequenceNum);
 
 // Get first window element that needs to be sent.
 window_element getElementFromWindow(window* w, window_element* we);
+
+
+/* Parse messages for client and server. */
+
 
 #endif
