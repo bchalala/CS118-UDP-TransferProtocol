@@ -7,7 +7,7 @@
 #include <strings.h>
 
 #define PACKET_SIZE 1024
-#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1);
+#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1)
 // -1 for \0 at the end
 
 
@@ -93,7 +93,8 @@ int main(int argc, char* argv[]) {
 
 			packet* content_packet = (packet *) buffer;
 			if (content_packet == NULL) {
-				error("File Packet #%i was NULL\n", next_packet);
+				printf("File Packet #%i was NULL\n", next_packet);
+				exit(1);
 			}
 
 			if (file_packets == NULL) {
@@ -116,7 +117,8 @@ int main(int argc, char* argv[]) {
 			if (content_packet->seq_num == next_packet) {
 				// received the packet we supposed to be getting
 
-				printf("Got packet number %i, next packet should be %i", next_packet, ++next_packet);
+				printf("Got packet number %i, next packet should be %i\n\n", next_packet, next_packet+1);
+				next_packet++;
 
 				file_packets[received_packets] = *content_packet;
 				received_packets++;
@@ -125,7 +127,7 @@ int main(int argc, char* argv[]) {
 			}
 			else {
 				// got a different packet than expected
-				printf("Should get packet %i, but got %i\n", next_packet, content_packet->seq_num);
+				printf("Should get packet %i, but got %i\n\n", next_packet, content_packet->seq_num);
 
 				ACK_packet.seq_num = content_packet->seq_num;
 			}	
@@ -136,7 +138,7 @@ int main(int argc, char* argv[]) {
 
 			ACK_packet.total_size = file_size;
 
-			sendto(clientsocket, (char *) ACK_packet, PACKET_SIZE, 
+			sendto(clientsocket, (char *) &ACK_packet, PACKET_SIZE, 
 				0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 
 			if (next_packet > total_num_packets) {
@@ -155,21 +157,21 @@ int main(int argc, char* argv[]) {
 	/*
 		Write the received packets into file
 	*/
-	char fileContent[total_size + 1];
+	char fileContent[file_size + 1];
 
 	int i;
 	for (i = 0; i < total_num_packets; i++) {
 		strcat(fileContent, file_packets[i].buffer);
 	}
 
-	fileContent[total_size] = '\0';
+	//fileContent[file_size] = '\0';
 
-	FILE* f = fopen("receiveTest.txt", "wb");
+	FILE* f = fopen("test.txt", "wb");
 	if (f == NULL) {
 		error("ERROR with opening file");
 	}
 
-	fwrite(fileContent, sizeof(char), total_size, f);
+	fwrite(fileContent, sizeof(char), file_size, f);
 
 	fclose(f);
 

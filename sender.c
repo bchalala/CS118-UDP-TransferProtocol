@@ -10,7 +10,7 @@
 #include <sys/stat.h> // for file stat
 //#include "sll.h"
 #define PACKET_SIZE 1024
-#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1);
+#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1)
 // -1 for \0 at the end
 
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 		 	int namelen = strlen(buffer);
 		 	char filename[namelen + 1];
 		 	filename[namelen] = '\0';
-		 	strncpy(filename, &buffer, namelen);
+		 	strncpy(filename, buffer, namelen);
 
 		 	bzero((char*) buffer, sizeof(char) * PACKET_SIZE);
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 			/* 	BREAK DOWN FILE */
 
 			int num_packets = fileBytes / PACKET_CONTENT_SIZE;
-			int remainderBytes = fileBytes % packet_size;
+			int remainderBytes = fileBytes % PACKET_CONTENT_SIZE;
 			if (remainderBytes)
 				num_packets++;
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 				// TODO: how should seq_num be numbered - packet number?
 			}
 
-			printf("Created array of packets with %i packets\n", num_packets);
+			printf("Created array of packets with %i packets\n\n", num_packets);
 
 
 			/*
@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
 			//int latest_ACK_received = -1;
 			int latest_packet = -1;
 			int latest_ACKd_packet = -1;
+			int expected_ACK = 0;
 
 			time_t timeout;
 
@@ -170,16 +171,17 @@ int main(int argc, char *argv[])
 				/*
 					Send packets within the window size					
 				*/
-				for (i = curr_window_elem; i < curr_window_elem + window_size && i != num_packets; i++) {
-					printf("Latest Packet Sent: %i\n Current Window Element: %i\n", latest_packet, i);
+				int j;
+				for (j = curr_window_elem; j < curr_window_elem + window_size && j < num_packets; j++) {
+					printf("Latest Packet Sent: %i\nCurrent Window Element: %i\n\n", latest_packet, j);
 
-					if (i > latest_ACKd_packet) {
+					if (j > latest_ACKd_packet) {
 
-						sendto(sockfd, (char *) (file_packets + i), sizeof(char) * PACKET_SIZE, 
+						sendto(sockfd, (char *) (file_packets + j), sizeof(char) * PACKET_SIZE, 
 							0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
-						printf("Just sent packet %i out of %i\n", i, num_packets));
+						printf("Just sent packet %i out of %i\n", j, num_packets);
 
-						latest_packet = i;
+						latest_packet = j;
 
 						// TODO: set timer
 
@@ -205,30 +207,50 @@ int main(int argc, char *argv[])
 					// Again, loop to listen for ACK msg
 					if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 
-						if (buffer == NULL) {
-							error("ERROR Nothing in ACK msg buffer");
-						}
-
 						// TODO: handle packet corruption & loss
 
 						packet* ACK_msg = (packet *) buffer;
 
-						int latest_ACK_received = ACK_msg->seq_num;
-
-						if (latest_ACK_received > file_packets[curr_window_elem].seq_num) {
-							latest_ACKd_packet = latest_ACK_received;
-
-							// update curr_window_elem
-							
-
-
-
-
+						if (ACK_msg == NULL) {
+							error("ERROR Nothing in ACK msg buffer");
 						}
 
+						int latest_ACK_received = ACK_msg->seq_num;
+
+						//if (latest_ACK_received > file_packets[curr_window_elem].seq_num) {
+						if (latest_ACK_received == expected_ACK) {
+
+							latest_ACKd_packet = latest_ACK_received;
+							expected_ACK++;
+
+							curr_window_elem++;
+
+							if (latest_ACK_received == num_packets - 1) {
+								printf("ACK for the last packet received\n");
+								break;
+							}
+
+							latest_packet++;
+
+							/*
+							  curr window elem = 0
+							_____________________
+							| 0 | 1 | 2 | 3 | 4 |
+							---------------------
+
+							--> update: curr window elem = 1, send 5
+								_____________________
+							| 0 | 1 | 2 | 3 | 4 | 5 |
+								---------------------
+							*/
 
 
 
+							sendto(sockfd, (char *) (file_packets + latest_packet), sizeof(char) * PACKET_SIZE, 
+									0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));						
+							//TODO: timeout
+
+						}
 					}
 
 				} // End of ACK while loop
@@ -244,5 +266,6 @@ int main(int argc, char *argv[])
 
 
  	close(sockfd);
+ 	return 0;
 
 }
