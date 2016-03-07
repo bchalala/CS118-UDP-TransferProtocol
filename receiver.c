@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     socklen_t len;
     struct sockaddr_in serv_addr;
     struct hostent *server; //contains tons of information, including the server's IP address
-    char buffer[PACKET_CONTENT_SIZE];
+    char buffer[PACKET_SIZE];
 
 
     // pre-PLPC testing - too lazy to write all the parameters for testing
@@ -159,9 +159,10 @@ int main(int argc, char* argv[]) {
 		Write the received packets into file
 	*/
 	char fileContent[file_size + 1];
+	memset(fileContent, 0, file_size + 1);	
 
 	int i;
-	for (i = 0; i < total_num_packets; i++) {
+	for (i = 0; i <= total_num_packets; i++) {
 		strcat(fileContent, file_packets[i].buffer);
 	}
 

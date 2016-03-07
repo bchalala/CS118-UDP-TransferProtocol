@@ -130,10 +130,19 @@ int main(int argc, char *argv[])
 			int i;
 			for (i = 0; i < num_packets; i++) {
 
-				if ((i != num_packets) - 1 && remainderBytes) { 
+				if ((i == num_packets - 1) && remainderBytes) { 
 				// the last packet with remainder bytes doesn't take full space
 					strncpy(file_packets[i].buffer, fileContent + i * PACKET_CONTENT_SIZE, remainderBytes);
 					file_packets[i].buffer[remainderBytes] = '\0';
+
+					/*
+					printf("TESTING LAST PACKET\n");
+					int k;
+					for (k = 0; k < remainderBytes; k++) {
+						printf("%c", file_packets[i].buffer[k]);
+					}
+					printf("\n LAST PACKET DONE\n");
+					*/
 				}
 				else { // normal cases
 					strncpy(file_packets[i].buffer, fileContent + i * PACKET_CONTENT_SIZE, PACKET_CONTENT_SIZE);
@@ -227,6 +236,7 @@ int main(int argc, char *argv[])
 
 							if (latest_ACK_received == num_packets - 1) {
 								printf("ACK for the last packet received\n");
+								printf("Last packet had %i Bytes\n", remainderBytes);
 								break;
 							}
 
@@ -244,7 +254,7 @@ int main(int argc, char *argv[])
 								---------------------
 							*/
 
-							printf("ACK for the packet %i received, sending %i\n", latest_packet-1, latest_packet);
+							printf("ACK for the packet %i received, sending %i\n", expected_ACK - 1, expected_ACK);
 
 							sendto(sockfd, (char *) (file_packets + latest_packet), sizeof(char) * PACKET_SIZE, 
 									0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));						
