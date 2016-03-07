@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     socklen_t len;
     struct sockaddr_in serv_addr;
     struct hostent *server; //contains tons of information, including the server's IP address
-    char buffer[256];
+    char buffer[PACKET_CONTENT_SIZE];
 
 
     // pre-PLPC testing - too lazy to write all the parameters for testing
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
 			if (content_packet->seq_num == next_packet) {
 				// received the packet we supposed to be getting
 
-				printf("Got packet number %i, next packet should be %i\n\n", next_packet, next_packet+1);
+				printf("Got packet number %i, next packet should be %i\n", next_packet, next_packet+1);
 				next_packet++;
 
 				file_packets[received_packets] = *content_packet;
@@ -140,6 +140,7 @@ int main(int argc, char* argv[]) {
 
 			sendto(clientsocket, (char *) &ACK_packet, PACKET_SIZE, 
 				0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+			printf("Sent ACK seqnum %i\n\n", ACK_packet.seq_num);
 
 			if (next_packet > total_num_packets) {
 				break;

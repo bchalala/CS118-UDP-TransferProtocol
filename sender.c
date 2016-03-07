@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 								---------------------
 							*/
 
-
+							printf("ACK for the packet %i received, sending %i\n", latest_packet-1, latest_packet);
 
 							sendto(sockfd, (char *) (file_packets + latest_packet), sizeof(char) * PACKET_SIZE, 
 									0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));						
