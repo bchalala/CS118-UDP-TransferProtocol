@@ -106,10 +106,17 @@ int main(int argc, char* argv[]) {
 
 			// Places the first packet received in the correct position of the file_packets buffer.
 			int sequenceNum = content_packet->seq_num;
+			char packetType = content_packet->type;
 			file_packets[sequenceNum] = *content_packet;
 			printf("Got packet number %i. \n\n", sequenceNum);
+			if (packetType == SENDPACKET) {
+				printf("Packet type: data packet.\n");
+			}
+			if (packetType == RETRANSMITPACKET) {
+				printf("Packet type: retransmitted data packet.\n");
+			}
 			next_packet = sequenceNum + 1;
-
+			ACK_packet.type = ACKPACKET;
 			ACK_packet.seq_num = sequenceNum;
 			ACK_packet.total_size = file_size;
 
@@ -134,10 +141,17 @@ int main(int argc, char* argv[]) {
 			packet ACK_packet;
 
 			int sequenceNum = content_packet->seq_num;
+			char packetType = content_packet->type;
 			file_packets[sequenceNum] = *content_packet;
 			printf("Got packet number %i.\n\n", sequenceNum);
+			if (packetType == SENDPACKET) {
+				printf("Packet type: data packet.\n");
+			}
+			if (packetType == RETRANSMITPACKET) {
+				printf("Packet type: retransmitted data packet.\n");
+			}
 			next_packet = sequenceNum + 1;
-
+			ACK_packet.type = ACKPACKET;
 			ACK_packet.seq_num = sequenceNum;
 			ACK_packet.total_size = file_size;
 

@@ -112,7 +112,6 @@ bool shouldReceive(float pL, float pC) {
     float normalizedtrypl = trypl/1000.0;
     int trypc = rand() % 1000;
     float normalizedtrypc = trypc/1000.0;
-    printf("vals: %d %d\n", trypl, trypc);
     if (normalizedtrypl >= pL && normalizedtrypc >= pC)
         return true;
 
