@@ -211,7 +211,9 @@ int main(int argc, char *argv[])
 							error("ERROR Nothing in ACK msg buffer");
 						}
 
-						int latest_ACK_received = ACK_msg->seq_num;
+						int latest_ACK_received = -1;
+						if (ACK_msg->total_size == fileBytes)
+							latest_ACK_received = ACK_msg->seq_num;
 
 
 						
