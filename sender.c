@@ -147,64 +147,41 @@ int main(int argc, char *argv[])
 			int latest_ACKd_packet = -1;
 			int expected_ACK = 0;
 
-			time_t timeout;
+			unsigned int time_to_wait = 5;
 
 
 			// keep sending and receiving ACK until we get ACK for last packet
-			while (latest_ACKd_packet != num_packets - 1) {
+			//while (latest_ACKd_packet != num_packets - 1) {
 
 				/*
 					Send packets within the window size					
 				*/
 
-				window w = generateWindow(window_size);
+				window w = generateWindow(window_size, num_packets);
 
 				int l = curr_window_elem;
 				while (addWindowElement(&w, (file_packets + l))) {
 					l++;
 				}
 
-				l = curr_window_elem;
+				int packet_to_send = curr_window_elem;
 				window_element* curr_we = NULL;
 				while ((curr_we = getElementFromWindow(&w))) {
-					printf("Latest Packet Sent: %i\nCurrent Window Element: %i\n\n", latest_packet, l);
+					printf("Latest Packet Sent: %i\nCurrent Window Element: %i\n\n", latest_packet, packet_to_send);
 
-					if (l > latest_ACKd_packet) {
-						sendto(sockfd, (char *) (file_packets + l), sizeof(char) * PACKET_SIZE, 
+					if (packet_to_send > latest_ACKd_packet) {
+						sendto(sockfd, (char *) (file_packets + packet_to_send), sizeof(char) * PACKET_SIZE, 
 							0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
 
 						curr_we->status = WE_SENT;
-						curr_we->timer = time(NULL);
+						curr_we->timer = time(NULL) + time_to_wait;
 
-						printf("Just sent packet %i out of %i\n", l, num_packets);
-						latest_packet = l;
+						printf("Just sent packet %i out of %i\n", packet_to_send, num_packets);
+						latest_packet = packet_to_send;
 					}
 
-					l++;
+					packet_to_send++;
 				}
-
-				/*
-				int j;
-				for (j = curr_window_elem; j < curr_window_elem + window_size && j < num_packets; j++) {
-					printf("Latest Packet Sent: %i\nCurrent Window Element: %i\n\n", latest_packet, j);
-
-					if (j > latest_ACKd_packet) {
-
-						sendto(sockfd, (char *) (file_packets + j), sizeof(char) * PACKET_SIZE, 
-							0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
-
-
-
-						printf("Just sent packet %i out of %i\n", j, num_packets);
-
-						latest_packet = j;
-
-						// TODO: set timer
-
-					}
-
-				}
-				*/
 
 
 				int last_window_packet = -1;
@@ -212,7 +189,7 @@ int main(int argc, char *argv[])
 					last_window_packet = num_packets-1;
 				else
 					last_window_packet = window_size + curr_window_elem - 1;	
-
+					// here, packet_to_send will be one greater than last_window_packet
 
 				/*
 					Loop to receive ACKs within the window
@@ -234,43 +211,41 @@ int main(int argc, char *argv[])
 
 						int latest_ACK_received = ACK_msg->seq_num;
 
-						//if (latest_ACK_received > file_packets[curr_window_elem].seq_num) {
-						if (latest_ACK_received == expected_ACK) {
 
-							latest_ACKd_packet = latest_ACK_received;
-							expected_ACK++;
-
-							curr_window_elem++;
+						
+						if (ackWindowElement(&w, latest_ACK_received)) {
 
 							if (latest_ACK_received == num_packets - 1) {
+
 								printf("ACK for the last packet received\n");
-								printf("Last packet had %i Bytes\n", remainderBytes);
 								break;
 							}
 
-							latest_packet++;
+							printf("ACK for the packet %i received\n", latest_ACK_received);
 
-							/*
-							  curr window elem = 0
-							_____________________
-							| 0 | 1 | 2 | 3 | 4 |
-							---------------------
+							// if the first window element is ACK'd, we can slide window
+							cleanWindow(&w);
 
-							--> update: curr window elem = 1, send 5
-								_____________________
-							| 0 | 1 | 2 | 3 | 4 | 5 |
-								---------------------
-							*/
 
-							printf("ACK for the packet %i received, sending %i\n", expected_ACK - 1, expected_ACK);
+							if (addWindowElement(&w, (file_packets + packet_to_send))) {
 
-							sendto(sockfd, (char *) (file_packets + latest_packet), sizeof(char) * PACKET_SIZE, 
-									0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));						
-							//TODO: timeout
+								curr_window_elem++;
+								printf("Sliding window, new first window index is: %i\n", curr_window_elem);
+							}
+
+							if (packet_to_send < num_packets) {
+								sendto(sockfd, (char *) (file_packets + packet_to_send), sizeof(char) * PACKET_SIZE, 
+										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+
+								packet_to_send++;
+							}
+
 						}
+
 					}
 				} // End of ACK while loop
-			} // End of packet sending while loop
+			//	break;
+			//} // End of packet sending while loop
 		}
 	}
 
