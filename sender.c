@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 			*/
 
 			// window_size --> atoi(argv[2]) / PACKET_SIZE
-			unsigned int window_size = 5; // or atoi(argv[2])
+			unsigned int window_size = 6; // or atoi(argv[2])
 			unsigned int curr_window_elem = 0;
 
 			//int latest_ACK_received = -1;
@@ -246,7 +246,9 @@ int main(int argc, char *argv[])
 				} // End of ACK while loop
 			//	break;
 			//} // End of packet sending while loop
-		}
+				printf("Done with file transfer");
+				bzero((char*) buffer, sizeof(char) * PACKET_SIZE);
+		} // end of if(recvfrom)
 	}
 
  	close(sockfd);
