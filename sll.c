@@ -38,7 +38,6 @@ bool ackWindowElement(window* w, int sequenceNum)
     return setWindowElementStatus(w, sequenceNum, WE_ACK);
 }
 
-
 void cleanWindow(window* w) 
 {
     // If the head of the window can be recycled, it recycles the head and sets the window
@@ -56,7 +55,7 @@ void cleanWindow(window* w)
     }
 }
 
-bool addWindowElement(window* w, packet* p, int sequenceNum) 
+bool addWindowElement(window* w, packet* packet)
 {
     if (w->length == w->max_size)
         return false;

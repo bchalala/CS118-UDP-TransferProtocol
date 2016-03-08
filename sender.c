@@ -47,12 +47,6 @@ int main(int argc, char *argv[])
 	if (sockfd < 0) 
 		error("ERROR opening socket");
 
-	bzero((char*) &serv_addr, sizeof(serv_addr));
-
-	serv_addr.sin_family=AF_INET;
-	serv_addr.sin_port=htons(portno);
-	serv_addr.sin_addr.s_addr = INADDR_ANY;
-
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
 	    error("ERROR on binding");
 
@@ -123,15 +117,6 @@ int main(int argc, char *argv[])
 				// the last packet with remainder bytes doesn't take full space
 					strncpy(file_packets[i].buffer, fileContent + i * PACKET_CONTENT_SIZE, remainderBytes);
 					file_packets[i].buffer[remainderBytes] = '\0';
-
-					/*
-					printf("TESTING LAST PACKET\n");
-					int k;
-					for (k = 0; k < remainderBytes; k++) {
-						printf("%c", file_packets[i].buffer[k]);
-					}
-					printf("\n LAST PACKET DONE\n");
-					*/
 				}
 				else { // normal cases
 					strncpy(file_packets[i].buffer, fileContent + i * PACKET_CONTENT_SIZE, PACKET_CONTENT_SIZE);
@@ -248,21 +233,12 @@ int main(int argc, char *argv[])
 							sendto(sockfd, (char *) (file_packets + latest_packet), sizeof(char) * PACKET_SIZE, 
 									0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));						
 							//TODO: timeout
-
 						}
 					}
-
 				} // End of ACK while loop
-
-
 			} // End of packet sending while loop
-
-
 		}
-
 	}
-
-
 
  	close(sockfd);
  	return 0;
