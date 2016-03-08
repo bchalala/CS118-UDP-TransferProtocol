@@ -34,10 +34,12 @@ typedef struct {
     window_element* tail;
     int length;
     int max_size;
+    int total_packets;
+    int current_packets;
 } window;
 
 // Generates a new window struct
-window generateWindow(int window_size);
+window generateWindow(int window_size, int num_packets);
 
 // Marks a packet as acknowledged. Should be used when parsing client messages.
 bool ackWindowElement(window* w, int sequenceNum);

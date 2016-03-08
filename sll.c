@@ -5,12 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-window generateWindow(int window_size) {
+window generateWindow(int window_size, int num_packets) {
     window w;
     w.length = 0;
     w.max_size = window_size;
     w.head = NULL;
     w.tail = NULL;
+    w.total_packets = num_packets;
+    w.current_packets = 0;
     return w;
 }
 
@@ -62,7 +64,11 @@ bool addWindowElement(window* w, packet* packet)
     if (w->length == w->max_size)
         return false;
 
+    if (w->current_packets >= w->total_packets)
+        return false;
+
     w->length++;
+    w->current_packets++;
     window_element* nelement = malloc(sizeof(window_element));
     nelement->status = WE_NOT_SENT;
     nelement->packet = packet;
