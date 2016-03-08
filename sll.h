@@ -6,13 +6,23 @@
 #define WE_SENT 2
 #define WE_ACK  3
 
-#define MAX_WE_SIZE 1024
+#define PACKET_SIZE 1024
+#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1)
+// -1 for \0 at the end
 
-typedef struct {
+
+typedef struct _packet {
+	unsigned long total_size;
+	unsigned int seq_num;
+	char buffer[PACKET_CONTENT_SIZE + 1];
+	// +1 for \0 at the end
+} packet;
+
+typedef struct window_element {
     window_element* next;
-    byte* buffer;
+    packet* packet;
     int status; 
-    int seq_num;
+    time_t timer;
 } window_element;
 
 typedef struct {
@@ -35,13 +45,9 @@ bool resendWindowElement(window* w, int sequenceNum);
 void cleanWindow(window* w);
 
 // Add an element to the window. If the window is full, it will return false.
-bool addWindowElement(window* w, byte* buf, int sequenceNum);
+bool addWindowElement(window* w, packet* packet);
 
 // Get first window element that needs to be sent.
 window_element getElementFromWindow(window* w, window_element* we);
-
-
-/* Parse messages for client and server. */
-
 
 #endif

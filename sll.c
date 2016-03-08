@@ -17,7 +17,7 @@ bool setWindowElementStatus(window* w, int sequenceNum, int status)
 {
     window_element* cur = w->head;
     while (cur != NULL) {
-        if (cur->seq_num == sequenceNum)
+        if (cur->packet->seq_num == sequenceNum)
         {
             cur->status = status;
             return true;
@@ -47,7 +47,6 @@ void cleanWindow(window* w)
         w->length--;
         window_element* temp = w->head;
         free(head->buffer);
-
         if (w->head != w->tail) 
             w->head = w->head->next;
         else {
@@ -58,7 +57,7 @@ void cleanWindow(window* w)
     }
 }
 
-bool addWindowElement(window* w, byte* buf, int sequenceNum) 
+bool addWindowElement(window* w, packet* p, int sequenceNum) 
 {
     if (w->length == w->max_size)
         return false;
@@ -66,8 +65,7 @@ bool addWindowElement(window* w, byte* buf, int sequenceNum)
     length++;
     window_element* nelement = malloc(sizeof(window_element));
     nelement->status = WE_NOT_SENT;
-    nelement->buffer = buf;
-    nelement->seq_num = sequenceNum;
+    nelement->packet = p;
     
     if (w->head == NULL && w->tail == NULL) {
         w->head = nelement;
