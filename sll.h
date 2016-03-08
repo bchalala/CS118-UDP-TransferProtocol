@@ -14,6 +14,7 @@
 #define ACKPACKET 'a'
 #define RETRANSMITPACKET 'r'
 #define SENDPACKET 's'
+#define FILENOTFOUNDPACKET 'n'
 
 #define PACKET_SIZE 1024
 #define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) -sizeof(char) - 1)

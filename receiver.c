@@ -115,6 +115,10 @@ int main(int argc, char* argv[]) {
 			if (packetType == RETRANSMITPACKET) {
 				printf("Packet type: retransmitted data packet.\n");
 			}
+			if (packetType == FILENOTFOUNDPACKET) {
+				printf("Packet type: FILE NOT FOUND. Exiting.\n");
+				exit(1);
+			}
 			next_packet = sequenceNum + 1;
 			ACK_packet.type = ACKPACKET;
 			ACK_packet.seq_num = sequenceNum;

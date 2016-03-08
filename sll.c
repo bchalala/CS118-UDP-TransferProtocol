@@ -23,11 +23,13 @@ bool setWindowElementStatus(window* w, int sequenceNum, int status)
         if (cur->packet->seq_num == sequenceNum)
         {
             cur->status = status;
+        if (status == WE_RESEND) 
+            cur->packet->type = RETRANSMITPACKET;
             return true;
+
         }
         cur = cur->next;
     }
-
     // Element not found
     return false;
 }
