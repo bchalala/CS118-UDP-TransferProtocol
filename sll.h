@@ -9,6 +9,8 @@
 #define WE_SENT 2
 #define WE_ACK  3
 
+#define MAX_SEQ_NUM
+
 #define PACKET_SIZE 1024
 #define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1)
 // -1 for \0 at the end

@@ -26,7 +26,6 @@ int main(int argc, char* argv[]) {
     struct hostent *server; //contains tons of information, including the server's IP address
     char buffer[PACKET_SIZE];
 
-
     // pre-PLPC testing - too lazy to write all the parameters for testing
 	if (argc < 3) {
 		 fprintf(stderr,"ERROR, no host or port provided\n");
@@ -97,35 +96,31 @@ int main(int argc, char* argv[]) {
 			packet* content_packet = (packet *) buffer;
 			packet ACK_packet;
 
+			// Allocates space for file in a file_packet buffer.
+			file_size = content_packet->total_size;
+			total_num_packets = (file_size / PACKET_CONTENT_SIZE);
+			file_packets =  (packet *) calloc(total_num_packets, sizeof(packet));
 			if (file_packets == NULL) {
-				// very first packet
-				file_size = content_packet->total_size;
-
-				total_num_packets = (file_size / PACKET_CONTENT_SIZE);
-
-				file_packets =  (packet *) calloc(total_num_packets, sizeof(packet));
-
-				if (file_packets == NULL) {
-					error("ERROR allocating for receiving file packets");
-				}
-
-				printf("Got packet number %i, next packet should be %i\n", next_packet, next_packet+1);
-				next_packet++;
-
-				file_packets[received_packets] = *content_packet;
-				received_packets++;
-
-				ACK_packet.seq_num = next_packet - 1;
-				ACK_packet.total_size = file_size;
-
-				sendto(clientsocket, (char *) &ACK_packet, PACKET_SIZE, 
-					0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
-				printf("Sent ACK seqnum %i\n\n", ACK_packet.seq_num);
-
-				if (next_packet > total_num_packets) {
-					break;
-				}
+				error("ERROR allocating for receiving file packets");
 			}
+
+			// Places the first packet received in the correct position of the file_packets buffer.
+			int sequenceNum = content_packet->seq_num;
+			file_packets[sequenceNum] = *content_packet;
+			printf("Got packet number %i. \n\n", sequenceNum);
+			next_packet = sequenceNum + 1;
+
+			ACK_packet.seq_num = sequenceNum;
+			ACK_packet.total_size = file_size;
+
+			sendto(clientsocket, (char *) &ACK_packet, PACKET_SIZE, 
+				0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+			printf("Sent ACK seqnum %i\n\n", ACK_packet.seq_num);
+
+			if (next_packet > total_num_packets) {
+				break;
+			}
+			
 		}
 	}
 
@@ -138,29 +133,17 @@ int main(int argc, char* argv[]) {
 			packet* content_packet = (packet *) buffer;
 			packet ACK_packet;
 
-			if (content_packet->seq_num == next_packet) {
-				// received the packet we supposed to be getting
+			int sequenceNum = content_packet->seq_num;
+			file_packets[sequenceNum] = *content_packet;
+			printf("Got packet number %i.\n\n", sequenceNum);
+			next_packet = sequenceNum + 1;
 
-				printf("Got packet number %i, next packet should be %i\n", next_packet, next_packet+1);
-				next_packet++;
-
-				file_packets[received_packets] = *content_packet;
-				received_packets++;
-
-				ACK_packet.seq_num = next_packet - 1;
-			}
-			else {
-				// got a different packet than expected
-				printf("Should get packet %i, but got %i\n\n", next_packet, content_packet->seq_num);
-
-				ACK_packet.seq_num = content_packet->seq_num;
-			}	
+			ACK_packet.seq_num = sequenceNum;
+			ACK_packet.total_size = file_size;
 
 			/*
 				Received file packet, so send an ACK correspondingly
 			*/
-
-			ACK_packet.total_size = file_size;
 
 			sendto(clientsocket, (char *) &ACK_packet, PACKET_SIZE, 
 				0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
@@ -169,10 +152,7 @@ int main(int argc, char* argv[]) {
 			if (next_packet > total_num_packets) {
 				break;
 			}
-
-
 		}
-
 	} // End of receiving file packets while loop
 
 	printf("Done receiving file packets and sending ACKs back\n");
