@@ -11,11 +11,16 @@
 
 #define MAX_SEQ_NUM
 
+#define ACKPACKET 'a'
+#define RETRANSMITPACKET 'r'
+#define SENDPACKET 's'
+
 #define PACKET_SIZE 1024
-#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1)
+#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) -sizeof(char) - 1)
 // -1 for \0 at the end
 
 typedef struct _packet {
+    char type;
 	unsigned long total_size;
 	unsigned int seq_num;
 	char buffer[PACKET_CONTENT_SIZE + 1];
