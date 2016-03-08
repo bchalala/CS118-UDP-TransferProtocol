@@ -8,7 +8,8 @@
 #include <signal.h>	/* signal name macros, and the kill() prototype */
 
 #include <sys/stat.h> // for file stat
-//#include "sll.h"
+#include <time.h>
+
 
 #include "sll.h"
 
@@ -137,6 +138,7 @@ int main(int argc, char *argv[])
 
 			*/
 
+			// window_size --> atoi(argv[2]) / PACKET_SIZE
 			unsigned int window_size = 5; // or atoi(argv[2])
 			unsigned int curr_window_elem = 0;
 
@@ -154,6 +156,34 @@ int main(int argc, char *argv[])
 				/*
 					Send packets within the window size					
 				*/
+
+				window w = generateWindow(window_size);
+
+				int l = curr_window_elem;
+				while (addWindowElement(&w, (file_packets + l))) {
+					l++;
+				}
+
+				l = curr_window_elem;
+				window_element* curr_we = NULL;
+				while ((curr_we = getElementFromWindow(&w))) {
+					printf("Latest Packet Sent: %i\nCurrent Window Element: %i\n\n", latest_packet, l);
+
+					if (l > latest_ACKd_packet) {
+						sendto(sockfd, (char *) (file_packets + l), sizeof(char) * PACKET_SIZE, 
+							0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+
+						curr_we->status = WE_SENT;
+						curr_we->timer = time(NULL);
+
+						printf("Just sent packet %i out of %i\n", l, num_packets);
+						latest_packet = l;
+					}
+
+					l++;
+				}
+
+				/*
 				int j;
 				for (j = curr_window_elem; j < curr_window_elem + window_size && j < num_packets; j++) {
 					printf("Latest Packet Sent: %i\nCurrent Window Element: %i\n\n", latest_packet, j);
@@ -162,6 +192,9 @@ int main(int argc, char *argv[])
 
 						sendto(sockfd, (char *) (file_packets + j), sizeof(char) * PACKET_SIZE, 
 							0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+
+
+
 						printf("Just sent packet %i out of %i\n", j, num_packets);
 
 						latest_packet = j;
@@ -171,6 +204,7 @@ int main(int argc, char *argv[])
 					}
 
 				}
+				*/
 
 
 				int last_window_packet = -1;

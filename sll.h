@@ -1,6 +1,9 @@
 #ifndef SLL
 #define SLL
 
+#include <stdbool.h>
+#include <time.h>
+
 #define WE_NOT_SENT 0
 #define WE_RESEND 1
 #define WE_SENT 2
@@ -18,7 +21,7 @@ typedef struct _packet {
 } packet;
 
 typedef struct window_element {
-    window_element* next;
+    struct window_element* next;
     packet* packet;
     int status; 
     time_t timer;
@@ -47,6 +50,6 @@ void cleanWindow(window* w);
 bool addWindowElement(window* w, packet* packet);
 
 // Get first window element that needs to be sent.
-window_element getElementFromWindow(window* w, window_element* we);
+window_element* getElementFromWindow(window* w);
 
 #endif

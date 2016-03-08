@@ -3,10 +3,12 @@
 
 #include "sll.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 window generateWindow(int window_size) {
+    window w;
     w.length = 0;
-    w.max_size = window_size();
+    w.max_size = window_size;
     w.head = NULL;
     w.tail = NULL;
     return w;
@@ -44,7 +46,7 @@ void cleanWindow(window* w)
     while (w->head != NULL && w->head->status == WE_ACK) {
         w->length--;
         window_element* temp = w->head;
-        free(head->buffer);
+
         if (w->head != w->tail) 
             w->head = w->head->next;
         else {
@@ -60,10 +62,10 @@ bool addWindowElement(window* w, packet* packet)
     if (w->length == w->max_size)
         return false;
 
-    length++;
+    w->length++;
     window_element* nelement = malloc(sizeof(window_element));
     nelement->status = WE_NOT_SENT;
-    nelement->packet = p;
+    nelement->packet = packet;
     
     if (w->head == NULL && w->tail == NULL) {
         w->head = nelement;
@@ -77,7 +79,7 @@ bool addWindowElement(window* w, packet* packet)
     return true; 
 }
 
-window_element getElementFromWindow(window* w)
+window_element* getElementFromWindow(window* w)
 {
     window_element* cur = w->head;
     while (cur != NULL)
