@@ -114,8 +114,10 @@ bool shouldReceive(float pL, float pC) {
     float normalizedtrypl = trypl/1000.0;
     int trypc = rand() % 1000;
     float normalizedtrypc = trypc/1000.0;
-    if (normalizedtrypl >= pL && normalizedtrypc >= pC)
-        return true;
+    if (normalizedtrypl >= pL)
+        if (normalizedtrypc >= pC)
+            return true;
+        printf("Packet is corrupted.");
 
     return false;
 }
