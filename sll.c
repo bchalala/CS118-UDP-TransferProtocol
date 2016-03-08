@@ -72,6 +72,7 @@ bool addWindowElement(window* w, packet* packet)
     window_element* nelement = malloc(sizeof(window_element));
     nelement->status = WE_NOT_SENT;
     nelement->packet = packet;
+    nelement->next = NULL;
     
     if (w->head == NULL && w->tail == NULL) {
         w->head = nelement;
@@ -87,16 +88,20 @@ bool addWindowElement(window* w, packet* packet)
 
 window_element* getElementFromWindow(window* w)
 {
+
     window_element* cur = w->head;
     while (cur != NULL)
     {
         if (cur->status == WE_NOT_SENT || cur->status == WE_RESEND)
         {
+
             return cur;
-        }    
+        }
+
         cur = cur->next;
     }
     
+
     return NULL;
 }
 

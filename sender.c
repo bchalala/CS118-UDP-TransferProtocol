@@ -183,6 +183,8 @@ int main(int argc, char *argv[])
 					packet_to_send++;
 				}
 
+				printf("Out of the first window\n\n");
+
 
 				int last_window_packet = -1;
 				if (curr_window_elem + window_size > num_packets)
@@ -236,17 +238,19 @@ int main(int argc, char *argv[])
 							if (packet_to_send < num_packets) {
 								sendto(sockfd, (char *) (file_packets + packet_to_send), sizeof(char) * PACKET_SIZE, 
 										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+								printf("Just sent packet %i out of %i\n", packet_to_send, num_packets);
 
 								packet_to_send++;
 							}
 
 						}
 
-					}
+					} // End of if recv ACK
+
 				} // End of ACK while loop
 			//	break;
 			//} // End of packet sending while loop
-				printf("Done with file transfer");
+				printf("Done with file transfer\n\n");
 				bzero((char*) buffer, sizeof(char) * PACKET_SIZE);
 		} // end of if(recvfrom)
 	}
