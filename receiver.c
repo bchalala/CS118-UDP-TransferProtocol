@@ -6,18 +6,7 @@
 #include <stdlib.h>
 #include <strings.h>
 
-#define PACKET_SIZE 1024
-#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1)
-// -1 for \0 at the end
-
-
-typedef struct _packet {
-
-	unsigned long total_size;
-	unsigned int seq_num;
-	char buffer[PACKET_CONTENT_SIZE + 1];
-	// +1 for \0 at the end
-} packet;
+#include "sll.h"
 
 void error(char *msg)
 {

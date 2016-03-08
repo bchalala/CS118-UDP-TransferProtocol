@@ -10,7 +10,6 @@
 #define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) - 1)
 // -1 for \0 at the end
 
-
 typedef struct _packet {
 	unsigned long total_size;
 	unsigned int seq_num;

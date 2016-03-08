@@ -4,8 +4,7 @@
 #include "sll.h"
 #include <stdio.h>
 
-window* generateWindow(int window_size) {
-    window* w = malloc(sizeof(window));
+window generateWindow(int window_size) {
     w.length = 0;
     w.max_size = window_size();
     w.head = NULL;
