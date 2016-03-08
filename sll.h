@@ -52,4 +52,8 @@ bool addWindowElement(window* w, packet* packet);
 // Get first window element that needs to be sent.
 window_element* getElementFromWindow(window* w);
 
+/* Other auxiliary functions */
+bool shouldReceive(float pL, float pC);
+
+
 #endif
