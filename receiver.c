@@ -5,6 +5,7 @@
 #include <netdb.h>      // define structures like hostent
 #include <stdlib.h>
 #include <strings.h>
+#include <time.h>
 
 #include "sll.h"
 
@@ -74,17 +75,27 @@ int main(int argc, char* argv[]) {
 	unsigned long file_size;
 	unsigned int received_packets = 0;
 	unsigned int total_num_packets;
+	bool firstPacketReceived = false;
+	time_t now = time(NULL);
+	float pL = 0;
+	float pC = 0;
 
+	// Keeps attempting to send file request until it gets a response. 
+	while (firstPacketReceived == false) {
+		// Attempts to send a request 
+		if (time(NULL) - now > 1) {
+				now = time(NULL);
+				printf("Requesting the file: %s\n", filename);
+				sendto(clientsocket, filename, strlen(filename) * sizeof(char), 
+							0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+		}
 
-	while (1) {
-		// keep looping to receive file packets
-		if (recvfrom(clientsocket, buffer, sizeof(buffer), 0,(struct sockaddr*) &serv_addr, &len) != -1) {
-
+		if (recvfrom(clientsocket, buffer, sizeof(buffer), MSG_DONTWAIT,(struct sockaddr*) &serv_addr, &len) != -1 
+			&& shouldReceive(pL, pC)) 
+		{
+			firstPacketReceived = true;
 			packet* content_packet = (packet *) buffer;
-			if (content_packet == NULL) {
-				printf("File Packet #%i was NULL\n", next_packet);
-				exit(1);
-			}
+			packet ACK_packet;
 
 			if (file_packets == NULL) {
 				// very first packet
@@ -97,11 +108,35 @@ int main(int argc, char* argv[]) {
 				if (file_packets == NULL) {
 					error("ERROR allocating for receiving file packets");
 				}
+
+				printf("Got packet number %i, next packet should be %i\n", next_packet, next_packet+1);
+				next_packet++;
+
+				file_packets[received_packets] = *content_packet;
+				received_packets++;
+
+				ACK_packet.seq_num = next_packet - 1;
+				ACK_packet.total_size = file_size;
+
+				sendto(clientsocket, (char *) &ACK_packet, PACKET_SIZE, 
+					0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+				printf("Sent ACK seqnum %i\n\n", ACK_packet.seq_num);
+
+				if (next_packet > total_num_packets) {
+					break;
+				}
 			}
+		}
+	}
 
+
+	while (1) {
+		// keep looping to receive file packets
+		if (recvfrom(clientsocket, buffer, sizeof(buffer), 0,(struct sockaddr*) &serv_addr, &len) != -1 
+			&& shouldReceive(pL, pC)) 
+		{
+			packet* content_packet = (packet *) buffer;
 			packet ACK_packet;
-
-			// TODO: handle packet corruption or loss
 
 			if (content_packet->seq_num == next_packet) {
 				// received the packet we supposed to be getting
@@ -141,8 +176,6 @@ int main(int argc, char* argv[]) {
 	} // End of receiving file packets while loop
 
 	printf("Done receiving file packets and sending ACKs back\n");
-
-
 
 	/*
 		Write the received packets into file

@@ -101,7 +101,7 @@ bool shouldReceive(float pL, float pC) {
     float normalizedtrypl = trypl/1000;
     int trypc = rand() % 1000;
     float normalizedtrypc = trypc/1000;
-    if (normalizedtrypl >= pL, normalizedtrypc >= pC)
+    if (normalizedtrypl >= pL && normalizedtrypc >= pC)
         return true;
 
     return false;
