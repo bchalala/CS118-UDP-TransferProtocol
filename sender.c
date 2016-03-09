@@ -125,7 +125,8 @@ int main(int argc, char *argv[])
 				}
 
 				file_packets[i].total_size = fileBytes;
-				file_packets[i].seq_num = i; 
+				file_packets[i].seq_num = i;
+				file_packets[i].type = SENDPACKET;
 				// TODO: how should seq_num be numbered - packet number?
 			}
 
@@ -200,6 +201,27 @@ int main(int argc, char *argv[])
 
 					// TODO: break out if timeout'd
 
+					//printf("Check if timeout or new message\n");
+					
+					if (w.head != NULL && difftime(w.head->timer, time(NULL)) <= 0) {
+						// the first window element is timeout'd
+						int curr_s = w.head->packet->seq_num;
+						w.head->timer = time(NULL) + time_to_wait;
+						printf("First window element (%i) had timed out\n", curr_s);
+
+						if (!resendWindowElement(&w, curr_s)) {
+							printf("Failed to resend packet (%i)\n", curr_s);
+						} 
+
+						sendto(sockfd, (char *) (file_packets + curr_s), sizeof(char) * PACKET_SIZE, 
+										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));	
+
+						printf("Retransmitting packet number %i\n", curr_s);			
+
+					}
+					
+
+
 					// Again, loop to listen for ACK msg
 					if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 
@@ -212,7 +234,7 @@ int main(int argc, char *argv[])
 						}
 
 						int latest_ACK_received = -1;
-						if (ACK_msg->total_size == fileBytes)
+						if (ACK_msg->type == ACKPACKET)
 							latest_ACK_received = ACK_msg->seq_num;
 
 
@@ -228,16 +250,19 @@ int main(int argc, char *argv[])
 							printf("ACK for the packet %i received\n", latest_ACK_received);
 
 							// if the first window element is ACK'd, we can slide window
+
+							
 							cleanWindow(&w);
 
 
 							if (addWindowElement(&w, (file_packets + packet_to_send))) {
 
 								curr_window_elem++;
-								printf("Sliding window, new first window index is: %i\n", curr_window_elem);
+								printf("Sliding window, new 1st window index is: %i last: %i\n", curr_window_elem, curr_window_elem + window_size-1);
 							}
 
-							if (packet_to_send < num_packets) {
+							if (curr_window_elem <= packet_to_send && packet_to_send < curr_window_elem + window_size) {
+							//if (packet_to_send < num_packets) {
 								sendto(sockfd, (char *) (file_packets + packet_to_send), sizeof(char) * PACKET_SIZE, 
 										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
 								printf("Just sent packet %i out of %i\n", packet_to_send, num_packets);
@@ -247,7 +272,9 @@ int main(int argc, char *argv[])
 
 						}
 
+
 					} // End of if recv ACK
+					//printf("Next received message ");
 
 				} // End of ACK while loop
 			//	break;
