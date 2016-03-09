@@ -76,8 +76,8 @@ int main(int argc, char* argv[]) {
 	unsigned int total_num_packets;
 	bool firstPacketReceived = false;
 	time_t now = time(NULL);
-	float pL = 0.3;
-	float pC = 0.3;
+	float pL = 0;
+	float pC = 0;
 
 	// Keeps attempting to send file request until it gets a response. 
 	while (firstPacketReceived == false) {
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
 			int sequenceNum = content_packet->seq_num;
 			char packetType = content_packet->type;
 			file_packets[sequenceNum] = *content_packet;
-			printf("Got packet number %i.\n\n", sequenceNum);
+			printf("Got packet number %i.\n", sequenceNum);
 			if (packetType == SENDPACKET) {
 				printf("Packet type: data packet.\n");
 			}

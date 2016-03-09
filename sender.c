@@ -147,9 +147,8 @@ int main(int argc, char *argv[])
 			//int latest_ACK_received = -1;
 			int latest_packet = -1;
 			int latest_ACKd_packet = -1;
-			int expected_ACK = 0;
 
-			unsigned int time_to_wait = 5;
+			float time_to_wait = 50;
 
 
 			// keep sending and receiving ACK until we get ACK for last packet
@@ -161,38 +160,10 @@ int main(int argc, char *argv[])
 
 				window w = generateWindow(window_size, num_packets);
 
-				int l = curr_window_elem;
-				while (addWindowElement(&w, (file_packets + l))) {
-					l++;
+				while (addWindowElement(&w, (file_packets + curr_window_elem))) {
+					curr_window_elem++;
 				}
 
-				int packet_to_send = curr_window_elem;
-				window_element* curr_we = NULL;
-				while ((curr_we = getElementFromWindow(&w))) {
-					printf("Latest Packet Sent: %i\nCurrent Window Element: %i\n\n", latest_packet, packet_to_send);
-
-					if (packet_to_send > latest_ACKd_packet) {
-						sendto(sockfd, (char *) (file_packets + packet_to_send), sizeof(char) * PACKET_SIZE, 
-							0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
-
-						curr_we->status = WE_SENT;
-						curr_we->timer = time(NULL) + time_to_wait;
-
-						printf("Just sent packet %i out of %i\n", packet_to_send, num_packets);
-						latest_packet = packet_to_send;
-					}
-
-					packet_to_send++;
-				}
-
-				printf("Out of the first window\n\n");
-
-
-				int last_window_packet = -1;
-				if (curr_window_elem + window_size > num_packets)
-					last_window_packet = num_packets-1;
-				else
-					last_window_packet = window_size + curr_window_elem - 1;	
 					// here, packet_to_send will be one greater than last_window_packet
 
 				/*
@@ -200,86 +171,60 @@ int main(int argc, char *argv[])
 				*/
 				while (1) {
 
-					// TODO: break out if timeout'd
+					window_element* we = getElementFromWindow(w);
+					while (we != NULL) {
+						int cs_num = we->packet->seq_num;
 
-					//printf("Check if timeout or new message\n");
-					
-					if (w.head != NULL && difftime(w.head->timer, time(NULL)) <= 0) {
-						// the first window element is timeout'd
-						int curr_s = w.head->packet->seq_num;
-						w.head->timer = time(NULL) + time_to_wait;
-						printf("First window element (%i) had timed out\n", curr_s);
-
-						if (!resendWindowElement(&w, curr_s)) {
-							printf("Failed to resend packet (%i)\n", curr_s);
-						} 
-
-						sendto(sockfd, (char *) (file_packets + curr_s), sizeof(char) * PACKET_SIZE, 
+						sendto(sockfd, (char *) (file_packets + cs_num), sizeof(char) * PACKET_SIZE, 
 										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));	
-
-						printf("Retransmitting packet number %i\n", curr_s);			
-
+						if (we->status == WE_RESEND) {
+							printf("Retransmitting packet number %d\n", cs_num);
+						}
+						if (we->status == WE_NOT_SENT) {
+							printf("Transmitting packet number %d\n", cs_num);
+						}
+						time_t t = time(NULL) + time_to_wait;
+						we->timer = t;
+						we->status = WE_SENT;
+						we = getElementFromWindow(w);
 					}
-					
-
 
 					// Again, loop to listen for ACK msg
-					if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
+					bool didreceive = true;
+					while (didreceive) {
+						didreceive = false;
+						if (recvfrom(sockfd, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr*) &cli_addr, &clilen) != -1) {
+							didreceive = true;
+							// TODO: handle packet corruption & loss
 
-						// TODO: handle packet corruption & loss
+							packet* ACK_msg = (packet *) buffer;
 
-						packet* ACK_msg = (packet *) buffer;
-
-						if (ACK_msg == NULL) {
-							error("ERROR Nothing in ACK msg buffer");
-						}
-
-						int latest_ACK_received = -1;
-						if (ACK_msg->type == ACKPACKET)
-							latest_ACK_received = ACK_msg->seq_num;
-
-
-						
-						if (ackWindowElement(&w, latest_ACK_received)) {
-
-							if (latest_ACK_received == num_packets - 1) {
-
-								printf("ACK for the last packet received\n");
-								break;
+							if (ACK_msg == NULL) {
+								error("ERROR Nothing in ACK msg buffer");
 							}
 
-							printf("ACK for the packet %i received\n", latest_ACK_received);
-
-							// if the first window element is ACK'd, we can slide window
-
+							int latest_ACK_received = -1;
+							if (ACK_msg->type == ACKPACKET)
+								latest_ACK_received = ACK_msg->seq_num;
 							
-							cleanWindow(&w);
+							if (ackWindowElement(&w, latest_ACK_received)) {
 
+								printf("ACK for the packet %i received\n", latest_ACK_received);
 
-							if (addWindowElement(&w, (file_packets + packet_to_send))) {
-
-								curr_window_elem++;
-								printf("Sliding window, new 1st window index is: %i last: %i\n", curr_window_elem, curr_window_elem + window_size-1);
+								// if the first window element is ACK'd, we can slide window
+								if (num_packets == curr_window_elem && w.length == 0) {
+									printf("ACK for the last packet received\n");
+									break;
+								}
 							}
-
-							if (curr_window_elem <= packet_to_send && packet_to_send < curr_window_elem + window_size) {
-							//if (packet_to_send < num_packets) {
-								sendto(sockfd, (char *) (file_packets + packet_to_send), sizeof(char) * PACKET_SIZE, 
-										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
-								printf("Just sent packet %i out of %i\n", packet_to_send, num_packets);
-
-								packet_to_send++;
-							}
-
 						}
-
-
 					} // End of if recv ACK
-					//printf("Next received message ");
+
+					cleanWindow(&w);
+					while (curr_window_elem != num_packets && addWindowElement(&w, (file_packets + curr_window_elem)))
+						curr_window_elem++;
 
 				} // End of ACK while loop
-			//	break;
-			//} // End of packet sending while loop
 				printf("Done with file transfer\n\n");
 				bzero((char*) buffer, sizeof(char) * PACKET_SIZE);
 		} // end of if(recvfrom)

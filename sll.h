@@ -50,9 +50,6 @@ window generateWindow(int window_size, int num_packets);
 // Marks a packet as acknowledged. Should be used when parsing client messages.
 bool ackWindowElement(window* w, int sequenceNum);
 
-// Marks packet as needing to be resent. Should be used when parsing cient messages.
-bool resendWindowElement(window* w, int sequenceNum);
-
 // Removes elements from the head of the window if they are sent and acknowledged.
 void cleanWindow(window* w);
 
@@ -60,7 +57,7 @@ void cleanWindow(window* w);
 bool addWindowElement(window* w, packet* packet);
 
 // Get first window element that needs to be sent.
-window_element* getElementFromWindow(window* w);
+window_element* getElementFromWindow(window w);
 
 /* Other auxiliary functions */
 bool shouldReceive(float pL, float pC);

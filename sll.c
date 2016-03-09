@@ -34,10 +34,6 @@ bool setWindowElementStatus(window* w, int sequenceNum, int status)
     return false;
 }
 
-bool resendWindowElement(window* w, int sequenceNum) 
-{
-    return setWindowElementStatus(w, sequenceNum, WE_RESEND);
-}
 
 bool ackWindowElement(window* w, int sequenceNum) 
 {
@@ -59,6 +55,17 @@ void cleanWindow(window* w)
         }
         free(temp);
     }
+    
+    time_t now = time(NULL);
+    window_element* cur = w->head;
+    while (cur != NULL) {
+        if (cur->timer < now) {
+            cur->status = WE_RESEND;
+            printf("Packet number %d has timed out.\n", cur->packet->seq_num);
+        }
+        cur = cur->next;
+    }
+
 }
 
 bool addWindowElement(window* w, packet* packet)
@@ -88,22 +95,18 @@ bool addWindowElement(window* w, packet* packet)
     return true; 
 }
 
-window_element* getElementFromWindow(window* w)
+window_element* getElementFromWindow(window w)
 {
-
-    window_element* cur = w->head;
+    window_element* cur = w.head;
     while (cur != NULL)
     {
         if (cur->status == WE_NOT_SENT || cur->status == WE_RESEND)
         {
-
             return cur;
         }
 
         cur = cur->next;
     }
-    
-
     return NULL;
 }
 
