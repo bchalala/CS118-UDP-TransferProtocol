@@ -93,8 +93,17 @@ int main(int argc, char* argv[]) {
 	unsigned int total_num_packets;
 	bool firstPacketReceived = false;
 	time_t now = time(NULL);
-	float pL = 0;
-	float pC = 0;
+
+	float pL,pC;
+	if (argv[3] == NULL)
+		pL = 0;
+	else
+		pL = atof(argv[4]);
+
+	if (argv[4] == NULL)
+		pC = 0;
+	else
+		pC = atof(argv[5]);
 
 	bool* receive_check;
 
