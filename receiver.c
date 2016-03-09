@@ -18,7 +18,7 @@ void error(char *msg)
 int main(int argc, char* argv[]) {
 	// $ receiver < sender hostname >< sender portnumber >< filename > PL PC	
 	// argc = 6
-
+	srand(time(NULL));
 	int clientsocket; //Socket descriptor
     int portno, n;
     socklen_t len;
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
 			int sequenceNum = content_packet->seq_num;
 			char packetType = content_packet->type;
 			file_packets[sequenceNum] = *content_packet;
-			printf("Got packet number %i. \n\n", sequenceNum);
+			printf("Got packet number %i. \n", sequenceNum);
 			if (packetType == SENDPACKET) {
 				printf("Packet type: data packet.\n");
 			}

@@ -23,6 +23,7 @@ void error(char *msg)
 
 int main(int argc, char *argv[])
 {
+	srand(time(NULL));
 	int sockfd, newsockfd, portno, pid;
 	socklen_t clilen;
 	struct sockaddr_in serv_addr, cli_addr;

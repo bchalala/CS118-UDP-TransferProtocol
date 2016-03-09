@@ -109,15 +109,15 @@ window_element* getElementFromWindow(window* w)
 
 
 bool shouldReceive(float pL, float pC) {
-    srand(time(NULL));
     int trypl = rand() % 1000;
     float normalizedtrypl = trypl/1000.0;
     int trypc = rand() % 1000;
     float normalizedtrypc = trypc/1000.0;
-    if (normalizedtrypl >= pL)
+    if (normalizedtrypl >= pL) {
         if (normalizedtrypc >= pC)
             return true;
-        printf("Packet is corrupted.");
+        printf("Received corrupted packet.\n");
+    }
 
     return false;
 }
