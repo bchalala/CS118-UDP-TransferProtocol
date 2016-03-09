@@ -251,26 +251,7 @@ int main(int argc, char *argv[])
 
 							// if the first window element is ACK'd, we can slide window
 
-							while (w.head->status == WE_ACK) {
-								cleanWindow(&w);
-
-								if (addWindowElement(&w, (file_packets + packet_to_send))) {
-									curr_window_elem++;
-									printf("Sliding window, new 1st window index is: %i last: %i\n", curr_window_elem, curr_window_elem + window_size-1);
-								}
-
-								if (curr_window_elem <= packet_to_send && packet_to_send < curr_window_elem + window_size) {
-								//if (packet_to_send < num_packets) {
-									sendto(sockfd, (char *) (file_packets + packet_to_send), sizeof(char) * PACKET_SIZE, 
-											0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
-									printf("Just sent packet %i out of %i\n", packet_to_send, num_packets);
-
-									packet_to_send++;
-								}		
-								//printf("Check if there are more windows %i to clean\n", curr_window_elem);
-							}
-
-							/*
+							
 							cleanWindow(&w);
 
 
@@ -288,7 +269,6 @@ int main(int argc, char *argv[])
 
 								packet_to_send++;
 							}
-							*/
 
 						}
 

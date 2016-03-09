@@ -9,7 +9,7 @@
 #define WE_SENT 2
 #define WE_ACK  3
 
-#define MAX_SEQ_NUM
+#define MAX_SEQ_NUM 30720
 
 #define ACKPACKET 'a'
 #define RETRANSMITPACKET 'r'
@@ -17,7 +17,7 @@
 #define FILENOTFOUNDPACKET 'n'
 
 #define PACKET_SIZE 1024
-#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - sizeof(int) -sizeof(char) - 1)
+#define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - 3*sizeof(int) - 1)
 // -1 for \0 at the end
 
 typedef struct _packet {
