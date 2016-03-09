@@ -59,7 +59,7 @@ void cleanWindow(window* w)
     time_t now = time(NULL);
     window_element* cur = w->head;
     while (cur != NULL) {
-        if (cur->timer < now) {
+        if (cur->timer < now && cur->status != WE_ACK) {
             cur->status = WE_RESEND;
             printf("Packet number %d has timed out.\n", cur->packet->seq_num);
         }

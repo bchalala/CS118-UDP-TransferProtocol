@@ -35,8 +35,16 @@ int main(int argc, char *argv[])
 		 exit(1);
 	}
 
-	float pL = 0.1;
-	float pC = 0.1;
+	float pL,pC;
+	if (argv[3] == NULL)
+		pL = 0;
+	else
+		pL = atof(argv[3]);
+
+	if (argv[4] == NULL)
+		pC = 0;
+	else
+		pC = atof(argv[4]);
 
 	//reset memory
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));	
@@ -143,8 +151,11 @@ int main(int argc, char *argv[])
 
 			*/
 
-			// window_size --> atoi(argv[2]) / PACKET_SIZE
-			unsigned int window_size = 6; // or atoi(argv[2])
+			unsigned int window_size;
+			if (argv[2] == NULL)
+				window_size = 6;
+			else
+				window_size = atoi(argv[2]) / PACKET_SIZE;
 			unsigned int curr_window_elem = 0;
 
 			//int latest_ACK_received = -1;

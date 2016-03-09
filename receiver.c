@@ -15,6 +15,23 @@ void error(char *msg)
     exit(0);
 }
 
+bool receivedAll(bool* checklist, unsigned int csize) {
+	// check last window
+	int i;
+	if (csize < 6) {
+		for (i = 0; i < csize; i++)
+			if (checklist[i] == false)
+				return false;
+	}
+	else {
+		for (i = csize - 6; i < csize; i++)
+			if (checklist[i] == false)
+				return false;
+	}
+
+	return true;
+}
+
 int main(int argc, char* argv[]) {
 	// $ receiver < sender hostname >< sender portnumber >< filename > PL PC	
 	// argc = 6
@@ -76,8 +93,10 @@ int main(int argc, char* argv[]) {
 	unsigned int total_num_packets;
 	bool firstPacketReceived = false;
 	time_t now = time(NULL);
-	float pL = 0.2;
-	float pC = 0.2;
+	float pL = 0;
+	float pC = 0;
+
+	bool* receive_check;
 
 	// Keeps attempting to send file request until it gets a response. 
 	while (firstPacketReceived == false) {
@@ -99,10 +118,16 @@ int main(int argc, char* argv[]) {
 			// Allocates space for file in a file_packet buffer.
 			file_size = content_packet->total_size;
 			total_num_packets = (file_size / PACKET_CONTENT_SIZE);
+			if (file_size % PACKET_CONTENT_SIZE) // dangling byte packet
+				total_num_packets++;
 			file_packets =  (packet *) calloc(total_num_packets, sizeof(packet));
 			if (file_packets == NULL) {
 				error("ERROR allocating for receiving file packets");
 			}
+			else
+				printf("Allocated space for %i packets\n", total_num_packets);
+
+			receive_check = (bool *) calloc(total_num_packets, sizeof(bool));
 
 			// Places the first packet received in the correct position of the file_packets buffer.
 			int sequenceNum = content_packet->seq_num;
@@ -120,6 +145,8 @@ int main(int argc, char* argv[]) {
 				exit(1);
 			}
 			next_packet = sequenceNum + 1;
+			received_packets++;
+			receive_check[sequenceNum] = true;
 			ACK_packet.type = ACKPACKET;
 			ACK_packet.seq_num = sequenceNum;
 			ACK_packet.total_size = file_size;
@@ -128,7 +155,7 @@ int main(int argc, char* argv[]) {
 				0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 			printf("Sent ACK seqnum %i\n\n", ACK_packet.seq_num);
 
-			if (next_packet > total_num_packets) {
+			if (receivedAll(receive_check, total_num_packets)) {
 				break;
 			}
 			
@@ -136,7 +163,7 @@ int main(int argc, char* argv[]) {
 	}
 
 
-	while (1) {
+	while (!receivedAll(receive_check, total_num_packets)) {
 		// keep looping to receive file packets
 		if (recvfrom(clientsocket, buffer, sizeof(buffer), 0,(struct sockaddr*) &serv_addr, &len) != -1 
 			&& shouldReceive(pL, pC)) 
@@ -155,6 +182,8 @@ int main(int argc, char* argv[]) {
 				printf("Packet type: retransmitted data packet.\n");
 			}
 			next_packet = sequenceNum + 1;
+			received_packets++;
+			receive_check[sequenceNum] = true;
 			ACK_packet.type = ACKPACKET;
 			ACK_packet.seq_num = sequenceNum;
 			ACK_packet.total_size = file_size;
@@ -167,9 +196,10 @@ int main(int argc, char* argv[]) {
 				0, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 			printf("Sent ACK seqnum %i\n\n", ACK_packet.seq_num);
 
-			if (next_packet > total_num_packets) {
-				break;
-			}
+			//if (next_packet > total_num_packets) {
+			//	printf("Got the last packet\n");
+			//	break;
+			//}
 		}
 	} // End of receiving file packets while loop
 
