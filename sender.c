@@ -35,6 +35,9 @@ int main(int argc, char *argv[])
 		 exit(1);
 	}
 
+	float pL = 0.1;
+	float pC = 0.1;
+
 	//reset memory
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));	
 
