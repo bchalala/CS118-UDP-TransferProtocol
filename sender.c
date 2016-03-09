@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 
  	while (1) {
  		// once we receive file request from receiver, we go in. Otherwise, loop to keep listening
-	 	if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
+	 	if (recvfrom(sockfd, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 
 		 	int namelen = strlen(buffer);
 		 	char filename[namelen + 1];
@@ -204,10 +204,12 @@ int main(int argc, char *argv[])
 
 					//printf("Check if timeout or new message\n");
 					
-					if (w.head != NULL && difftime(w.head->timer, time(NULL)) <= 0) {
+					curr_we = w.head;
+					if (curr_we != NULL && curr_we->status != WE_ACK &&
+						difftime(curr_we->timer, time(NULL)) <= 0) {
 						// the first window element is timeout'd
-						int curr_s = w.head->packet->seq_num;
-						w.head->timer = time(NULL) + time_to_wait;
+						int curr_s = curr_we->packet->seq_num;
+						curr_we->timer = time(NULL) + time_to_wait;
 						printf("First window element (%i) had timed out\n", curr_s);
 
 						if (!resendWindowElement(&w, curr_s)) {
@@ -217,14 +219,15 @@ int main(int argc, char *argv[])
 						sendto(sockfd, (char *) (file_packets + curr_s), sizeof(char) * PACKET_SIZE, 
 										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));	
 
-						printf("Retransmitting packet number %i\n", curr_s);			
+						printf("Retransmitting packet number %i\n", curr_s);
+						curr_we = curr_we->next;		
 
 					}
 					
 
 
 					// Again, loop to listen for ACK msg
-					if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
+					if (recvfrom(sockfd, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 
 						// TODO: handle packet corruption & loss
 

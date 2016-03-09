@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
 
 	while (1) {
 		// keep looping to receive file packets
-		if (recvfrom(clientsocket, buffer, sizeof(buffer), 0,(struct sockaddr*) &serv_addr, &len) != -1 
+		if (recvfrom(clientsocket, buffer, sizeof(buffer), MSG_DONTWAIT,(struct sockaddr*) &serv_addr, &len) != -1 
 			&& shouldReceive(pL, pC)) 
 		{
 			packet* content_packet = (packet *) buffer;
