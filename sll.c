@@ -119,7 +119,7 @@ bool shouldReceive(float pL, float pC) {
     if (normalizedtrypl >= pL) {
         if (normalizedtrypc >= pC)
             return true;
-        printf("Received corrupted packet.\n");
+        printf("Received corrupted packet.\n\n");
     }
 
     return false;

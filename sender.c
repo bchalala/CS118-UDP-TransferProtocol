@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 			int latest_packet = -1;
 			int latest_ACKd_packet = -1;
 
-			float time_to_wait = 50;
+			time_t time_to_wait = 1;
 
 
 			// keep sending and receiving ACK until we get ACK for last packet
@@ -195,6 +195,8 @@ int main(int argc, char *argv[])
 						didreceive = false;
 						if (recvfrom(sockfd, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 							didreceive = true;
+							if (shouldReceive(pL, pC) == false)
+								continue;
 							// TODO: handle packet corruption & loss
 
 							packet* ACK_msg = (packet *) buffer;

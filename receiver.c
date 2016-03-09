@@ -76,8 +76,8 @@ int main(int argc, char* argv[]) {
 	unsigned int total_num_packets;
 	bool firstPacketReceived = false;
 	time_t now = time(NULL);
-	float pL = 0;
-	float pC = 0;
+	float pL = 0.2;
+	float pC = 0.2;
 
 	// Keeps attempting to send file request until it gets a response. 
 	while (firstPacketReceived == false) {
