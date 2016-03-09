@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 					//printf("Check if timeout or new message\n");
 					
 					curr_we = w.head;
-					if (curr_we != NULL && curr_we->status != WE_ACK &&
+					while (curr_we != NULL && curr_we->status != WE_ACK &&
 						difftime(curr_we->timer, time(NULL)) <= 0) {
 						// the first window element is timeout'd
 						int curr_s = curr_we->packet->seq_num;
