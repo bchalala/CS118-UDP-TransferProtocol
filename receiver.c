@@ -95,12 +95,12 @@ int main(int argc, char* argv[]) {
 	time_t now = time(NULL);
 
 	float pL,pC;
-	if (argv[3] == NULL)
+	if (argv[4] == NULL)
 		pL = 0;
 	else
 		pL = atof(argv[4]);
 
-	if (argv[4] == NULL)
+	if (argv[5] == NULL)
 		pC = 0;
 	else
 		pC = atof(argv[5]);

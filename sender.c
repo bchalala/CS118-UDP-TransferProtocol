@@ -232,13 +232,23 @@ int main(int argc, char *argv[])
 									printf("ACK for the last packet received\n");
 									break;
 								}
+
 							}
+
+							
+
 						}
 					} // End of if recv ACK
 
 					cleanWindow(&w);
 					while (curr_window_elem != num_packets && addWindowElement(&w, (file_packets + curr_window_elem)))
 						curr_window_elem++;
+
+					if (w.head == NULL)
+					{
+						printf("Window is empty\n");
+						break;
+					}
 
 				} // End of ACK while loop
 				printf("Done with file transfer\n\n");
