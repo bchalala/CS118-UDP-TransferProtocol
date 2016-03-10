@@ -171,7 +171,8 @@ int main(int argc, char *argv[])
 			printf("Window Size if %i packets\n", window_size);
 			unsigned int curr_window_elem = 0;
 
-			time_t time_to_wait = 1;
+			time_t time_to_wait_s = 0;
+			suseconds_t time_to_wait_us = 500000;
 
 
 			// keep sending and receiving ACK until we get ACK for last packet
@@ -206,8 +207,15 @@ int main(int argc, char *argv[])
 						if (we->status == WE_NOT_SENT) {
 							printf("Transmitting packet number %d\n", cs_num);
 						}
-						time_t t = time(NULL) + time_to_wait;
-						we->timer = t;
+
+						struct timeval tv;
+						gettimeofday(&tv, NULL);
+
+						time_t t_s = tv.tv_sec + time_to_wait_s;
+						suseconds_t t_us = tv.tv_usec + time_to_wait_us;
+
+						we->tv.tv_sec = t_s;
+						we->tv.tv_usec = t_us;
 						we->status = WE_SENT;
 						we = getElementFromWindow(w);
 					}
