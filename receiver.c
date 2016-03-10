@@ -239,11 +239,9 @@ int main(int argc, char* argv[]) {
 
 			last_seq_num = content_packet->seq_num/1024;
 
-			printf("sequence number: %d\n\n", sequenceNum);
-
 			char packetType = content_packet->type;
 			file_packets[sequenceNum] = *content_packet;
-			printf("Got packet number %i (%i)\n", content_packet->seq_num, sequenceNum);
+			printf("Got packet number %i\n", content_packet->seq_num);
 			if (packetType == SENDPACKET) {
 				printf("Packet type: data packet.\n");
 			}
