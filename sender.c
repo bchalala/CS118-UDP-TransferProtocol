@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 					while (we != NULL) {
 						int cs_num = we->packet->seq_num;
 
-						sendto(sockfd, (char *) (file_packets + cs_num), sizeof(char) * PACKET_SIZE, 
+						sendto(sockfd, (char *) we->packet, sizeof(char) * PACKET_SIZE, 
 										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));	
 						if (we->status == WE_RESEND) {
 							printf("Retransmitting packet number %d\n", cs_num);
@@ -211,6 +211,8 @@ int main(int argc, char *argv[])
 						if (we->status == WE_NOT_SENT) {
 							printf("Transmitting packet number %d\n", cs_num);
 						}
+
+
 
 						struct timeval tv;
 						gettimeofday(&tv, NULL);
@@ -250,6 +252,7 @@ int main(int argc, char *argv[])
 
 								printf("ACK for the packet %i received\n", latest_ACK_received);
 
+
 								// if the first window element is ACK'd, we can slide window
 								if (num_packets == curr_window_elem + 1 && w.length == 0) {
 									printf("ACK for the last packet received\n");
@@ -274,6 +277,9 @@ int main(int argc, char *argv[])
 
 				} // End of ACK while loop
 				printf("Done with file transfer\n\n");
+
+
+
 				bzero((char*) buffer, sizeof(char) * PACKET_SIZE);
 		} // end of if(recvfrom)
 	}

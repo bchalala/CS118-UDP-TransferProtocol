@@ -181,7 +181,6 @@ int main(int argc, char* argv[]) {
 
 	while (!receivedAll(receive_check, total_num_packets)) {
 		// keep looping to receive file packets
-		printf("Received all isn't completely true\n");
 		if (recvfrom(clientsocket, buffer, sizeof(buffer), 0,(struct sockaddr*) &serv_addr, &len) != -1 
 			&& shouldReceive(pL, pC)) 
 		{
@@ -191,7 +190,7 @@ int main(int argc, char* argv[]) {
 			int sequenceNum = content_packet->seq_num;
 
 			//
-			if (last_seq_num - sequenceNum > 15000 && !shouldAdd) {
+			if (last_seq_num - sequenceNum > 30000 && !shouldAdd) {
 				printf("Time to rewind\n");
 				mult_counter++;
 				add_counter = 0;
@@ -199,16 +198,18 @@ int main(int argc, char* argv[]) {
 				sequenceNum += mult_counter * MAX_SEQ_NUM;
 			}
 			else {
-
-				if (sequenceNum > 15000 && mult_counter) {
-					sequenceNum += mult_counter * MAX_SEQ_NUM;
+				if (sequenceNum > 15000 && shouldAdd && add_counter < 1000) {
+					sequenceNum += (mult_counter - 1) * MAX_SEQ_NUM;
 					printf("Here: %i\n", sequenceNum);
 				}
 				else {
 					sequenceNum += mult_counter * MAX_SEQ_NUM;
-					add_counter++;
-					if (add_counter > 15000)
+					if (shouldAdd)
+						add_counter++;
+					if (add_counter > 999) {
 						shouldAdd = false;
+						add_counter = 0;
+					}
 					printf("OR Here: %i\n", sequenceNum);
 				}
 
@@ -217,6 +218,7 @@ int main(int argc, char* argv[]) {
 			//
 
 			last_seq_num = content_packet->seq_num;
+
 
 
 			char packetType = content_packet->type;
@@ -232,7 +234,7 @@ int main(int argc, char* argv[]) {
 			received_packets++;
 			receive_check[sequenceNum] = true;
 			ACK_packet.type = ACKPACKET;
-			ACK_packet.seq_num = sequenceNum % MAX_SEQ_NUM;
+			ACK_packet.seq_num = content_packet->seq_num; //sequenceNum;// % MAX_SEQ_NUM;
 			ACK_packet.total_size = file_size;
 
 			/*
@@ -251,6 +253,9 @@ int main(int argc, char* argv[]) {
 	} // End of receiving file packets while loop
 
 	printf("Done receiving file packets and sending ACKs back\n");
+
+
+
 
 	/*
 		Write the received packets into file
@@ -271,7 +276,7 @@ int main(int argc, char* argv[]) {
 
 	fileContent[file_size] = '\0';
 
-	FILE* f = fopen("test", "wb");
+	FILE* f = fopen("test.txt", "wb");
 	if (f == NULL) {
 		error("ERROR with opening file");
 	}
