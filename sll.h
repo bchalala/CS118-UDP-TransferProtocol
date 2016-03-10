@@ -35,7 +35,6 @@ typedef struct window_element {
     struct window_element* next;
     packet* packet;
     int status; 
-    time_t timer;
     struct timeval tv;
 } window_element;
 

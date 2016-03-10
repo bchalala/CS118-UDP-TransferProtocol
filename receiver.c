@@ -87,7 +87,6 @@ int main(int argc, char* argv[]) {
 
 	// variables to keep track of packet information
 	packet* file_packets = NULL;
-	unsigned int next_packet = 0;
 	unsigned long file_size;
 	unsigned int received_packets = 0;
 	unsigned int total_num_packets;
@@ -131,6 +130,36 @@ int main(int argc, char* argv[]) {
 			packet* content_packet = (packet *) buffer;
 			packet ACK_packet;
 
+			int sequenceNum = (content_packet->seq_num)/1024;
+			if (last_seq_num - sequenceNum > 20 && !shouldAdd) {
+				printf("Last sequence number: %d\n SequenceNum: %d\n", last_seq_num, sequenceNum);
+				printf("Time to rewind\n");
+				mult_counter++;
+				add_counter = 0;
+				shouldAdd = true;
+				sequenceNum += mult_counter * MAX_SEQ_NUM;
+			}
+			else {
+				if (sequenceNum > 20 && shouldAdd && add_counter < 15) {
+					sequenceNum += (mult_counter - 1) * MAX_SEQ_NUM;
+				}
+				else {
+					sequenceNum += mult_counter * MAX_SEQ_NUM;
+					if (shouldAdd)
+						add_counter++;
+					if (add_counter > 14) {
+						shouldAdd = false;
+						add_counter = 0;
+					}
+				}
+
+			}
+
+
+
+			last_seq_num = sequenceNum;
+
+
 			// Allocates space for file in a file_packet buffer.
 			file_size = content_packet->total_size;
 			total_num_packets = (file_size / PACKET_CONTENT_SIZE);
@@ -146,7 +175,6 @@ int main(int argc, char* argv[]) {
 			receive_check = (bool *) calloc(total_num_packets, sizeof(bool));
 
 			// Places the first packet received in the correct position of the file_packets buffer.
-			int sequenceNum = content_packet->seq_num;
 			char packetType = content_packet->type;
 			file_packets[sequenceNum] = *content_packet;
 			printf("Got packet number %i. \n", sequenceNum);
@@ -160,7 +188,7 @@ int main(int argc, char* argv[]) {
 				printf("Packet type: FILE NOT FOUND. Exiting.\n");
 				exit(1);
 			}
-			next_packet = sequenceNum + 1;
+
 			received_packets++;
 			receive_check[sequenceNum] = true;
 			ACK_packet.type = ACKPACKET;
@@ -187,37 +215,31 @@ int main(int argc, char* argv[]) {
 			packet* content_packet = (packet *) buffer;
 			packet ACK_packet;
 
-			int sequenceNum = content_packet->seq_num;
+			int sequenceNum = (content_packet->seq_num)/1024;
 
-			//
-			if (last_seq_num - sequenceNum > 30000 && !shouldAdd) {
-				printf("Time to rewind\n");
+			if (last_seq_num - sequenceNum > 20 && !shouldAdd) {
 				mult_counter++;
 				add_counter = 0;
 				shouldAdd = true;
 				sequenceNum += mult_counter * MAX_SEQ_NUM;
 			}
 			else {
-				if (sequenceNum > 15000 && shouldAdd && add_counter < 1000) {
+				if (sequenceNum > 20 && shouldAdd && add_counter < 15) {
 					sequenceNum += (mult_counter - 1) * MAX_SEQ_NUM;
-					printf("Here: %i\n", sequenceNum);
 				}
 				else {
 					sequenceNum += mult_counter * MAX_SEQ_NUM;
 					if (shouldAdd)
 						add_counter++;
-					if (add_counter > 999) {
+					if (add_counter > 14) {
 						shouldAdd = false;
 						add_counter = 0;
 					}
-					printf("OR Here: %i\n", sequenceNum);
 				}
 
 			}
 
-			//
-
-			last_seq_num = content_packet->seq_num;
+			last_seq_num = sequenceNum;
 
 
 
@@ -230,7 +252,7 @@ int main(int argc, char* argv[]) {
 			if (packetType == RETRANSMITPACKET) {
 				printf("Packet type: retransmitted data packet.\n");
 			}
-			next_packet = sequenceNum + 1;
+
 			received_packets++;
 			receive_check[sequenceNum] = true;
 			ACK_packet.type = ACKPACKET;

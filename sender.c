@@ -153,9 +153,8 @@ int main(int argc, char *argv[])
 				}
 
 				file_packets[i].total_size = fileBytes;
-				file_packets[i].seq_num = i % MAX_SEQ_NUM;
+				file_packets[i].seq_num = (i % MAX_SEQ_NUM)*1024;
 				file_packets[i].type = SENDPACKET;
-				// TODO: how should seq_num be numbered - packet number?
 			}
 
 			printf("Created array of packets with %i packets\n\n", num_packets);
@@ -201,7 +200,7 @@ int main(int argc, char *argv[])
 
 					window_element* we = getElementFromWindow(w);
 					while (we != NULL) {
-						int cs_num = we->packet->seq_num;
+						unsigned int cs_num = we->packet->seq_num;
 
 						sendto(sockfd, (char *) we->packet, sizeof(char) * PACKET_SIZE, 
 										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));	
@@ -211,7 +210,6 @@ int main(int argc, char *argv[])
 						if (we->status == WE_NOT_SENT) {
 							printf("Transmitting packet number %d\n", cs_num);
 						}
-
 
 
 						struct timeval tv;
