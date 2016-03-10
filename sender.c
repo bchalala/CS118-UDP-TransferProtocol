@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
 
  	// wait for connection
  	printf("Waiting for receiver\n\n");
+	bzero((char*) buffer, sizeof(char) * PACKET_SIZE);
 
  	while (1) {
  		// once we receive file request from receiver, we go in. Otherwise, loop to keep listening
@@ -81,6 +82,7 @@ int main(int argc, char *argv[])
 
 		 	int namelen = strlen(buffer);
 		 	char filename[namelen + 1];
+			bzero(filename, sizeof(char) * (namelen + 1));
 		 	filename[namelen] = '\0';
 		 	strncpy(filename, buffer, namelen);
 
@@ -99,6 +101,7 @@ int main(int argc, char *argv[])
 			if (f == NULL) {
 				packet notfound;
 				notfound.type = FILENOTFOUNDPACKET;
+				notfound.total_size = 0;
 				printf("ERROR opening requested file\n");
 				sendto(sockfd, (char *) &notfound, sizeof(char) * PACKET_SIZE, 
 										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
