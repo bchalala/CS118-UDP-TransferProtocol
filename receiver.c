@@ -107,6 +107,13 @@ int main(int argc, char* argv[]) {
 
 	bool* receive_check;
 
+	// variables to deal with > 30k seq num
+	unsigned int mult_counter = 0;
+	bool shouldAdd = false;
+	unsigned int add_counter = 0;
+	int last_seq_num = 0;
+
+
 	// Keeps attempting to send file request until it gets a response. 
 	while (firstPacketReceived == false) {
 		// Attempts to send a request 
@@ -181,9 +188,37 @@ int main(int argc, char* argv[]) {
 			packet ACK_packet;
 
 			int sequenceNum = content_packet->seq_num;
+
+			//
+			if (last_seq_num - sequenceNum > 15000 && !shouldAdd) {
+				printf("Time to rewind\n");
+				mult_counter++;
+				add_counter = 0;
+				shouldAdd = true;
+				sequenceNum += mult_counter * MAX_SEQ_NUM;
+			}
+			else {
+
+				if (sequenceNum > 15000) {
+					sequenceNum += (mult_counter - 1) * MAX_SEQ_NUM;
+				}
+				else {
+					sequenceNum += mult_counter * MAX_SEQ_NUM;
+					add_counter++;
+					if (add_counter > 15000)
+						shouldAdd = false;
+				}
+
+			}
+
+			//
+
+			last_seq_num = content_packet->seq_num;
+
+
 			char packetType = content_packet->type;
 			file_packets[sequenceNum] = *content_packet;
-			printf("Got packet number %i.\n", sequenceNum);
+			printf("Got packet number %i (%i)\n", content_packet->seq_num, sequenceNum);
 			if (packetType == SENDPACKET) {
 				printf("Packet type: data packet.\n");
 			}

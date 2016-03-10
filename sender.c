@@ -133,7 +133,11 @@ int main(int argc, char *argv[])
 				PACKET ARRAY CONSTRUCTION
 
 			*/
-			packet file_packets[num_packets];
+			//packet file_packets[num_packets];
+			packet* file_packets;
+			file_packets = (packet *) calloc(num_packets, PACKET_SIZE);
+
+			printf("Packet Array initialized\n");
 
 			int i;
 			for (i = 0; i < num_packets; i++) {
