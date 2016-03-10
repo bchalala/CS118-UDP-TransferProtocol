@@ -181,6 +181,7 @@ int main(int argc, char* argv[]) {
 
 	while (!receivedAll(receive_check, total_num_packets)) {
 		// keep looping to receive file packets
+		printf("Received all isn't completely true\n");
 		if (recvfrom(clientsocket, buffer, sizeof(buffer), 0,(struct sockaddr*) &serv_addr, &len) != -1 
 			&& shouldReceive(pL, pC)) 
 		{
@@ -199,14 +200,16 @@ int main(int argc, char* argv[]) {
 			}
 			else {
 
-				if (sequenceNum > 15000) {
-					sequenceNum += (mult_counter - 1) * MAX_SEQ_NUM;
+				if (sequenceNum > 15000 && mult_counter) {
+					sequenceNum += mult_counter * MAX_SEQ_NUM;
+					printf("Here: %i\n", sequenceNum);
 				}
 				else {
 					sequenceNum += mult_counter * MAX_SEQ_NUM;
 					add_counter++;
 					if (add_counter > 15000)
 						shouldAdd = false;
+					printf("OR Here: %i\n", sequenceNum);
 				}
 
 			}
@@ -229,7 +232,7 @@ int main(int argc, char* argv[]) {
 			received_packets++;
 			receive_check[sequenceNum] = true;
 			ACK_packet.type = ACKPACKET;
-			ACK_packet.seq_num = sequenceNum;
+			ACK_packet.seq_num = sequenceNum % MAX_SEQ_NUM;
 			ACK_packet.total_size = file_size;
 
 			/*
@@ -252,17 +255,23 @@ int main(int argc, char* argv[]) {
 	/*
 		Write the received packets into file
 	*/
-	char fileContent[file_size + 1];
-	memset(fileContent, 0, file_size + 1);	
+	//char fileContent[file_size + 1];
+	char* fileContent;
+	fileContent = (char *) calloc(file_size + 1, sizeof(char));
+	//memset(fileContent, 0, file_size + 1);	
+
+	printf("File space ready - time to copy\n");
 
 	int i;
-	for (i = 0; i <= total_num_packets; i++) {
+	for (i = 0; i < total_num_packets; i++) {
 		strcat(fileContent, file_packets[i].buffer);
 	}
 
-	//fileContent[file_size] = '\0';
+	printf("FILE COPY DONE\n");
 
-	FILE* f = fopen("test.txt", "wb");
+	fileContent[file_size] = '\0';
+
+	FILE* f = fopen("test", "wb");
 	if (f == NULL) {
 		error("ERROR with opening file");
 	}
