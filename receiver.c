@@ -156,6 +156,17 @@ int main(int argc, char* argv[]) {
 
 
 			last_seq_num = content_packet->seq_num/1024;
+			char packetType = content_packet->type;
+			if (packetType == SENDPACKET) {
+				printf("Packet type: data packet.\n");
+			}
+			if (packetType == RETRANSMITPACKET) {
+				printf("Packet type: retransmitted data packet.\n");
+			}
+			if (packetType == FILENOTFOUNDPACKET) {
+				printf("Packet type: FILE NOT FOUND. Exiting.\n");
+				exit(1);
+			}
 
 
 			// Allocates space for file in a file_packet buffer.
@@ -173,19 +184,10 @@ int main(int argc, char* argv[]) {
 			receive_check = (bool *) calloc(total_num_packets, sizeof(bool));
 
 			// Places the first packet received in the correct position of the file_packets buffer.
-			char packetType = content_packet->type;
+			
 			file_packets[sequenceNum] = *content_packet;
 			printf("Got packet number %i. \n", sequenceNum);
-			if (packetType == SENDPACKET) {
-				printf("Packet type: data packet.\n");
-			}
-			if (packetType == RETRANSMITPACKET) {
-				printf("Packet type: retransmitted data packet.\n");
-			}
-			if (packetType == FILENOTFOUNDPACKET) {
-				printf("Packet type: FILE NOT FOUND. Exiting.\n");
-				exit(1);
-			}
+			
 
 			received_packets++;
 			receive_check[sequenceNum] = true;
