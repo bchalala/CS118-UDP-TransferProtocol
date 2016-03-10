@@ -46,6 +46,8 @@ int main(int argc, char *argv[])
 	else
 		pC = atof(argv[4]);
 
+	printf("PL: %f, PC: %f\n", pL, pC);
+
 	//reset memory
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));	
 
@@ -156,6 +158,7 @@ int main(int argc, char *argv[])
 				window_size = 6;
 			else
 				window_size = atoi(argv[2]) / PACKET_SIZE;
+			printf("Window Size if %i packets\n", window_size);
 			unsigned int curr_window_elem = 0;
 
 			//int latest_ACK_received = -1;
@@ -206,11 +209,14 @@ int main(int argc, char *argv[])
 					// Again, loop to listen for ACK msg
 					bool didreceive = true;
 					while (didreceive) {
+
 						didreceive = false;
 						if (recvfrom(sockfd, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 							didreceive = true;
-							if (shouldReceive(pL, pC) == false)
+							if (shouldReceive(pL, pC) == false) {
+
 								continue;
+							}
 							// TODO: handle packet corruption & loss
 
 							packet* ACK_msg = (packet *) buffer;
@@ -228,7 +234,7 @@ int main(int argc, char *argv[])
 								printf("ACK for the packet %i received\n", latest_ACK_received);
 
 								// if the first window element is ACK'd, we can slide window
-								if (num_packets == curr_window_elem && w.length == 0) {
+								if (num_packets == curr_window_elem + 1 && w.length == 0) {
 									printf("ACK for the last packet received\n");
 									break;
 								}
@@ -244,9 +250,8 @@ int main(int argc, char *argv[])
 					while (curr_window_elem != num_packets && addWindowElement(&w, (file_packets + curr_window_elem)))
 						curr_window_elem++;
 
-					if (w.head == NULL)
-					{
-						printf("Window is empty\n");
+					if (num_packets == curr_window_elem && w.length == 0) {
+						printf("ACK for the last packet received\n");
 						break;
 					}
 
