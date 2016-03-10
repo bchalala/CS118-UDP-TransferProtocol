@@ -23,8 +23,6 @@ bool setWindowElementStatus(window* w, int sequenceNum, int status)
         if (cur->packet->seq_num == sequenceNum)
         {
             cur->status = status;
-        if (status == WE_RESEND) 
-            cur->packet->type = RETRANSMITPACKET;
             return true;
 
         }
@@ -61,6 +59,7 @@ void cleanWindow(window* w)
     while (cur != NULL) {
         if (cur->timer < now && cur->status != WE_ACK) {
             cur->status = WE_RESEND;
+            cur->packet->type = RETRANSMITPACKET;
             printf("Packet number %d has timed out.\n", cur->packet->seq_num);
         }
         cur = cur->next;

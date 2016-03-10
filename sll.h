@@ -15,6 +15,7 @@
 #define RETRANSMITPACKET 'r'
 #define SENDPACKET 's'
 #define FILENOTFOUNDPACKET 'n'
+#define FILEREQPACKET 'f'
 
 #define PACKET_SIZE 1024
 #define PACKET_CONTENT_SIZE (PACKET_SIZE - sizeof(long) - 3*sizeof(int) - 1)
