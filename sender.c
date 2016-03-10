@@ -76,9 +76,9 @@ int main(int argc, char *argv[])
 	 	if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 
 			if (shouldReceive(pL, pC) == false) {
-
 				continue;
 			}
+
 		 	int namelen = strlen(buffer);
 		 	char filename[namelen + 1];
 		 	filename[namelen] = '\0';
@@ -165,15 +165,11 @@ int main(int argc, char *argv[])
 
 			unsigned int window_size;
 			if (argv[2] == NULL)
-				window_size = 6;
+				window_size = 5;
 			else
 				window_size = atoi(argv[2]) / PACKET_SIZE;
 			printf("Window Size if %i packets\n", window_size);
 			unsigned int curr_window_elem = 0;
-
-			//int latest_ACK_received = -1;
-			int latest_packet = -1;
-			int latest_ACKd_packet = -1;
 
 			time_t time_to_wait = 1;
 
@@ -219,7 +215,6 @@ int main(int argc, char *argv[])
 					// Again, loop to listen for ACK msg
 					bool didreceive = true;
 					while (didreceive) {
-
 						didreceive = false;
 						if (recvfrom(sockfd, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 							didreceive = true;
