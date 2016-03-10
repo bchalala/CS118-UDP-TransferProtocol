@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 				}
 
 				file_packets[i].total_size = fileBytes;
-				file_packets[i].seq_num = i;
+				file_packets[i].seq_num = i % MAX_SEQ_NUM;
 				file_packets[i].type = SENDPACKET;
 				// TODO: how should seq_num be numbered - packet number?
 			}
