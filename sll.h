@@ -11,7 +11,7 @@
 #define WE_SENT 2
 #define WE_ACK  3
 
-#define MAX_SEQ_NUM 30720
+#define MAX_SEQ_NUM 30
 
 #define ACKPACKET 'a'
 #define RETRANSMITPACKET 'r'

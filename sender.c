@@ -214,7 +214,6 @@ int main(int argc, char *argv[])
 
 						struct timeval tv;
 						gettimeofday(&tv, NULL);
-
 						time_t t_s = tv.tv_sec + time_to_wait_s;
 						suseconds_t t_us = tv.tv_usec + time_to_wait_us;
 

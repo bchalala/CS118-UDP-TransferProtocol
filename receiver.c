@@ -132,8 +132,6 @@ int main(int argc, char* argv[]) {
 
 			int sequenceNum = (content_packet->seq_num)/1024;
 			if (last_seq_num - sequenceNum > 20 && !shouldAdd) {
-				printf("Last sequence number: %d\n SequenceNum: %d\n", last_seq_num, sequenceNum);
-				printf("Time to rewind\n");
 				mult_counter++;
 				add_counter = 0;
 				shouldAdd = true;
@@ -157,7 +155,7 @@ int main(int argc, char* argv[]) {
 
 
 
-			last_seq_num = sequenceNum;
+			last_seq_num = content_packet->seq_num/1024;
 
 
 			// Allocates space for file in a file_packet buffer.
@@ -224,14 +222,14 @@ int main(int argc, char* argv[]) {
 				sequenceNum += mult_counter * MAX_SEQ_NUM;
 			}
 			else {
-				if (sequenceNum > 20 && shouldAdd && add_counter < 15) {
+				if (sequenceNum > 20 && shouldAdd && add_counter < 16) {
 					sequenceNum += (mult_counter - 1) * MAX_SEQ_NUM;
 				}
 				else {
 					sequenceNum += mult_counter * MAX_SEQ_NUM;
 					if (shouldAdd)
 						add_counter++;
-					if (add_counter > 14) {
+					if (add_counter > 12) {
 						shouldAdd = false;
 						add_counter = 0;
 					}
@@ -239,9 +237,9 @@ int main(int argc, char* argv[]) {
 
 			}
 
-			last_seq_num = sequenceNum;
+			last_seq_num = content_packet->seq_num/1024;
 
-
+			printf("sequence number: %d\n\n", sequenceNum);
 
 			char packetType = content_packet->type;
 			file_packets[sequenceNum] = *content_packet;
