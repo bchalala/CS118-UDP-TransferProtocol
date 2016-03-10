@@ -18,13 +18,13 @@ void error(char *msg)
 bool receivedAll(bool* checklist, unsigned int csize) {
 	// check last window
 	int i;
-	if (csize < 6) {
+	if (csize < 100) {
 		for (i = 0; i < csize; i++)
 			if (checklist[i] == false)
 				return false;
 	}
 	else {
-		for (i = csize - 6; i < csize; i++)
+		for (i = csize - 100; i < csize; i++)
 			if (checklist[i] == false)
 				return false;
 	}

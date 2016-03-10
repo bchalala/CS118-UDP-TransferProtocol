@@ -75,6 +75,10 @@ int main(int argc, char *argv[])
  		// once we receive file request from receiver, we go in. Otherwise, loop to keep listening
 	 	if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 
+			if (shouldReceive(pL, pC) == false) {
+
+				continue;
+			}
 		 	int namelen = strlen(buffer);
 		 	char filename[namelen + 1];
 		 	filename[namelen] = '\0';
@@ -93,7 +97,13 @@ int main(int argc, char *argv[])
 			/*	GETTING FILE CONTENT */
 			FILE* f =  fopen(filename, "r");
 			if (f == NULL) {
-				error("ERROR opening requested file");
+				packet notfound;
+				notfound.type = FILENOTFOUNDPACKET;
+				printf("ERROR opening requested file\n");
+				sendto(sockfd, (char *) &notfound, sizeof(char) * PACKET_SIZE, 
+										0, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+				continue;
+				
 			}
 
 			// number of bytes in the file
