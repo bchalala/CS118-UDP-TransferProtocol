@@ -1,6 +1,8 @@
 #ifndef SLL
 #define SLL
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
 
@@ -34,6 +36,7 @@ typedef struct window_element {
     packet* packet;
     int status; 
     time_t timer;
+    struct timeval tv;
 } window_element;
 
 typedef struct {

@@ -76,9 +76,9 @@ int main(int argc, char *argv[])
 	 	if (recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 
 			if (shouldReceive(pL, pC) == false) {
-
 				continue;
 			}
+
 		 	int namelen = strlen(buffer);
 		 	char filename[namelen + 1];
 		 	filename[namelen] = '\0';
@@ -169,17 +169,14 @@ int main(int argc, char *argv[])
 
 			unsigned int window_size;
 			if (argv[2] == NULL)
-				window_size = 6;
+				window_size = 5;
 			else
 				window_size = atoi(argv[2]) / PACKET_SIZE;
 			printf("Window Size if %i packets\n", window_size);
 			unsigned int curr_window_elem = 0;
 
-			//int latest_ACK_received = -1;
-			int latest_packet = -1;
-			int latest_ACKd_packet = -1;
-
-			time_t time_to_wait = 1;
+			time_t time_to_wait_s = 0;
+			suseconds_t time_to_wait_us = 500000;
 
 
 			// keep sending and receiving ACK until we get ACK for last packet
@@ -214,8 +211,15 @@ int main(int argc, char *argv[])
 						if (we->status == WE_NOT_SENT) {
 							printf("Transmitting packet number %d\n", cs_num);
 						}
-						time_t t = time(NULL) + time_to_wait;
-						we->timer = t;
+
+						struct timeval tv;
+						gettimeofday(&tv, NULL);
+
+						time_t t_s = tv.tv_sec + time_to_wait_s;
+						suseconds_t t_us = tv.tv_usec + time_to_wait_us;
+
+						we->tv.tv_sec = t_s;
+						we->tv.tv_usec = t_us;
 						we->status = WE_SENT;
 						we = getElementFromWindow(w);
 					}
@@ -223,7 +227,6 @@ int main(int argc, char *argv[])
 					// Again, loop to listen for ACK msg
 					bool didreceive = true;
 					while (didreceive) {
-
 						didreceive = false;
 						if (recvfrom(sockfd, buffer, sizeof(buffer), MSG_DONTWAIT, (struct sockaddr*) &cli_addr, &clilen) != -1) {
 							didreceive = true;

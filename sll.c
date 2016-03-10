@@ -54,13 +54,17 @@ void cleanWindow(window* w)
         free(temp);
     }
     
-    time_t now = time(NULL);
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
     window_element* cur = w->head;
+
     while (cur != NULL) {
-        if (cur->timer < now && cur->status != WE_ACK) {
-            cur->status = WE_RESEND;
-            cur->packet->type = RETRANSMITPACKET;
-            printf("Packet number %d has timed out.\n", cur->packet->seq_num);
+        if (cur->status != WE_ACK && cur->status != WE_NOT_SENT) {
+            if (tv.tv_sec > cur->tv.tv_sec || (tv.tv_sec == cur->tv.tv_sec && tv.tv_usec > cur->tv.tv_usec)) {
+                cur->status = WE_RESEND;
+                cur->packet->type = RETRANSMITPACKET;
+                printf("Packet number %d has timed out.\n", cur->packet->seq_num);
+            }
         }
         cur = cur->next;
     }
